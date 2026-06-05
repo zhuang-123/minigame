@@ -7,7 +7,7 @@
   "setting": {
     "urlCheck": false,
     "minified": true,
-    "postcss": true,
+    "postcss": false,
     "es6": true,
     "babelSetting": {
       "ignore": [],
@@ -17,8 +17,8 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.8.12",
-  "appid": "wxd3ccb4867c69b76f",
-  "projectname": "repair",
+  "appid": "wxfce431211897629b",
+  "projectname": "minigame",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
