@@ -2300,9 +2300,6 @@
 
 
 
-
-
-
 /* ========== 基础样式 ========== */
 .game-page.data-v-09d98812 {
   width: 100vw;
@@ -2332,8 +2329,7 @@ page.data-v-09d98812 {
   content: '';
   position: absolute;
   inset: 0;
-  background: -webkit-radial-gradient(center, ellipse, rgba(120, 0, 255, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
-  background: radial-gradient(ellipse at center, rgba(120, 0, 255, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
+  background: transparent;
   pointer-events: none;
   z-index: 0;
 }
@@ -2769,7 +2765,7 @@ page.data-v-09d98812 {
 /* 自己的倒计时（在手牌上方） */
 .self-countdown.data-v-09d98812 {
   position: absolute;
-  top: -60rpx;
+  top: -42rpx;
   left: 50%;
   -webkit-transform: translateX(-50%);
           transform: translateX(-50%);
@@ -2779,13 +2775,14 @@ page.data-v-09d98812 {
   -webkit-box-align: center;
   -webkit-align-items: center;
           align-items: center;
-  gap: 8rpx;
-  background: rgba(120, 0, 255, 0.8);
-  padding: 10rpx 20rpx;
-  border-radius: 30rpx;
-  border: 2rpx solid rgba(240, 192, 72, 0.75);
-  box-shadow: 0 0 20rpx rgba(120, 0, 255, 0.6);
+  gap: 6rpx;
+  background: rgba(120, 0, 255, 0.85);
+  padding: 8rpx 18rpx;
+  border-radius: 18rpx;
+  border: 1rpx solid rgba(240, 192, 72, 0.75);
+  box-shadow: 0 2rpx 8rpx rgba(120, 0, 255, 0.5);
   z-index: 10;
+  line-height: 1;
 }
 .self-countdown.countdown-warning.data-v-09d98812 {
   background: rgba(255, 71, 87, 0.9);
@@ -2849,7 +2846,6 @@ page.data-v-09d98812 {
   left: 20rpx;
   width: calc(100% - 40rpx);
   height: calc(100% - 50rpx);
-  border-radius: 50%;
   padding: 40rpx;
   display: -webkit-box;
   display: -webkit-flex;
@@ -2866,44 +2862,15 @@ page.data-v-09d98812 {
           justify-content: center;
   position: relative;
   z-index: 100;
-  box-shadow: 0 0 80rpx rgba(120, 0, 255, 0.5);
+  background: transparent;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 .desk-image.data-v-09d98812 {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  border-radius: 50%;
+  display: none;
 }
 .table-area.data-v-09d98812::before {
-  content: '';
-  position: absolute;
-  top: -10rpx;
-  left: -10rpx;
-  right: -10rpx;
-  bottom: -10rpx;
-  background: -webkit-linear-gradient(45deg, #6a11cb, #2575fc, #6a11cb);
-  background: linear-gradient(45deg, #6a11cb, #2575fc, #6a11cb);
-  border-radius: 50%;
-  z-index: -1;
-  -webkit-animation: tableGlow-data-v-09d98812 3s ease-in-out infinite;
-          animation: tableGlow-data-v-09d98812 3s ease-in-out infinite;
-}
-@-webkit-keyframes tableGlow-data-v-09d98812 {
-0%, 100% { opacity: 0.5;
-}
-50% { opacity: 0.8;
-}
-}
-@keyframes tableGlow-data-v-09d98812 {
-0%, 100% { opacity: 0.5;
-}
-50% { opacity: 0.8;
-}
+  display: none;
 }
 @-webkit-keyframes glow-data-v-09d98812 {
 0%, 100% { box-shadow: 0 0 10rpx rgba(255, 215, 0, 0.8);
@@ -3010,9 +2977,9 @@ page.data-v-09d98812 {
   text-shadow: 0 0 10rpx rgba(240, 192, 72, 0.8);
 }
 .wild-card-image.data-v-09d98812 {
-  width: 50rpx;
-  height: 70rpx;
-  border-radius: 5rpx;
+  width: 70rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
   box-shadow: 0 0 10rpx rgba(255, 215, 0, 0.8);
   -webkit-animation: glow-data-v-09d98812 2s ease-in-out infinite;
           animation: glow-data-v-09d98812 2s ease-in-out infinite;
@@ -3082,9 +3049,9 @@ page.data-v-09d98812 {
 }
 }
 .deck-image.data-v-09d98812 {
-  width: 50rpx;
-  height: 70rpx;
-  border-radius: 5rpx;
+  width: 70rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3);
 }
 .deck-count.data-v-09d98812 {
@@ -3133,9 +3100,9 @@ page.data-v-09d98812 {
   margin: 20rpx 0;
 }
 .played-card.data-v-09d98812 {
-  width: 50rpx;
-  height: 70rpx;
-  border-radius: 5rpx;
+  width: 70rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3);
 }
 .card-count-overlay.data-v-09d98812 {

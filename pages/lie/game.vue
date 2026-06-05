@@ -1,7 +1,7 @@
 <template>
   <view class="game-page">
     <!-- 背景图片 -->
-    <image src="/static/liepoker/background.png" mode="scaleToFill" class="background-image"></image>
+    <image src="/static/liepoker/desk.png" mode="scaleToFill" class="background-image"></image>
 
     <!-- 玩家信息区域 -->
     <!-- 自己（左下角） -->
@@ -72,9 +72,6 @@
 
     <!-- 牌桌区域 -->
     <view class="table-area">
-      <!-- 桌子背景图片 -->
-      <image src="/static/liepoker/desk.png" mode="scaleToFill" class="desk-image" />
-      
       <!-- 初始52张牌（发牌动画） -->
       <view class="initial-cards" v-if="isDealing">
         <image
@@ -2335,7 +2332,7 @@ page {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(120, 0, 255, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
+  background: transparent;
   pointer-events: none;
   z-index: 0;
 }
@@ -2684,18 +2681,19 @@ page {
 /* 自己的倒计时（在手牌上方） */
 .self-countdown {
   position: absolute;
-  top: -60rpx;
+  top: -42rpx;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  background: rgba(120, 0, 255, 0.8);
-  padding: 10rpx 20rpx;
-  border-radius: 30rpx;
-  border: 2rpx solid rgba(240, 192, 72, 0.75);
-  box-shadow: 0 0 20rpx rgba(120, 0, 255, 0.6);
+  gap: 6rpx;
+  background: rgba(120, 0, 255, 0.85);
+  padding: 8rpx 18rpx;
+  border-radius: 18rpx;
+  border: 1rpx solid rgba(240, 192, 72, 0.75);
+  box-shadow: 0 2rpx 8rpx rgba(120, 0, 255, 0.5);
   z-index: 10;
+  line-height: 1;
 }
 
 .self-countdown.countdown-warning {
@@ -2753,7 +2751,6 @@ page {
   left: 20rpx;
   width: calc(100% - 40rpx);
   height: calc(100% - 50rpx);
-  border-radius: 50%;
   padding: 40rpx;
   display: flex;
   flex-direction: column;
@@ -2761,37 +2758,17 @@ page {
   justify-content: center;
   position: relative;
   z-index: 100;
-  box-shadow: 0 0 80rpx rgba(120, 0, 255, 0.5);
+  background: transparent;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .desk-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  border-radius: 50%;
+  display: none;
 }
 
 .table-area::before {
-  content: '';
-  position: absolute;
-  top: -10rpx;
-  left: -10rpx;
-  right: -10rpx;
-  bottom: -10rpx;
-  background: linear-gradient(45deg, #6a11cb, #2575fc, #6a11cb);
-  border-radius: 50%;
-  z-index: -1;
-  animation: tableGlow 3s ease-in-out infinite;
-}
-
-@keyframes tableGlow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+  display: none;
 }
 
 @keyframes glow {
@@ -2868,9 +2845,9 @@ page {
 }
 
 .wild-card-image {
-  width: 50rpx;
-  height: 70rpx;
-  border-radius: 5rpx;
+  width: 70rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
   box-shadow: 0 0 10rpx rgba(255, 215, 0, 0.8);
   animation: glow 2s ease-in-out infinite;
 }
@@ -2921,9 +2898,9 @@ page {
 }
 
 .deck-image {
-  width: 50rpx;
-  height: 70rpx;
-  border-radius: 5rpx;
+  width: 70rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3);
 }
 
@@ -2962,9 +2939,9 @@ page {
 }
 
 .played-card {
-  width: 50rpx;
-  height: 70rpx;
-  border-radius: 5rpx;
+  width: 70rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3);
 }
 

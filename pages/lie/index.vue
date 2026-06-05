@@ -446,7 +446,8 @@ page {
   perspective: 1000rpx;
   max-width: 100%;
   flex-wrap: nowrap;
-  overflow-x: hidden;
+  padding-top: 30rpx;
+  overflow: visible;
 }
 
 .mode-card {
