@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "谎言扑克对局",
+  "navigationBarBackgroundColor": "#1a1a2e",
+  "navigationBarTextStyle": "white",
+  "navigationStyle": "custom",
+  "pageOrientation": "landscape",
+  "usingComponents": {}
+}

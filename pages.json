@@ -1,0 +1,152 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "火星超游",
+				"navigationBarBackgroundColor": "#0B63F6",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/mine/index",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "pages/dice",
+			"pages": [
+				{
+					"path": "rule",
+					"style": {
+						"navigationBarTitleText": "叫骰游戏规则",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
+				},
+				{
+					"path": "index",
+					"style": {
+						"navigationBarTitleText": "叫骰游戏",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/texas",
+			"pages": [
+				{
+					"path": "rule",
+					"style": {
+						"navigationBarTitleText": "德州扑克规则",
+						"navigationBarBackgroundColor": "#0e1218",
+						"navigationBarTextStyle": "white"
+					}
+				},
+				{
+					"path": "index",
+					"style": {
+						"navigationBarTitleText": "德州扑克",
+						"navigationBarBackgroundColor": "#0a1a0a",
+						"navigationBarTextStyle": "white"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/lie",
+			"pages": [
+				{
+					"path": "rule",
+					"style": {
+						"navigationBarTitleText": "谎言扑克规则",
+						"navigationBarBackgroundColor": "#1a1a2e",
+						"navigationBarTextStyle": "white",
+						"navigationStyle": "custom",
+						"pageOrientation": "landscape"
+					}
+				},
+				{
+					"path": "index",
+					"style": {
+						"navigationBarTitleText": "谎言扑克",
+						"navigationBarBackgroundColor": "#1a1a2e",
+						"navigationBarTextStyle": "white",
+						"navigationStyle": "custom",
+						"pageOrientation": "landscape"
+					}
+				},
+				{
+					"path": "game",
+					"style": {
+						"navigationBarTitleText": "谎言扑克对局",
+						"navigationBarBackgroundColor": "#1a1a2e",
+						"navigationBarTextStyle": "white",
+						"navigationStyle": "custom",
+						"pageOrientation": "landscape"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/dbti",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationBarTitleText": "DBTI 人格测试",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
+				},
+				{
+					"path": "test",
+					"style": {
+						"navigationBarTitleText": "测试中",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
+				},
+				{
+					"path": "result",
+					"style": {
+						"navigationBarTitleText": "测试结果",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
+				}
+			]
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#606266",
+		"selectedColor": "#0B63F6",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/index.png",
+				"selectedIconPath": "static/index_s.png"
+			},
+			{
+				"pagePath": "pages/mine/index",
+				"text": "我的",
+				"iconPath": "static/me.png",
+				"selectedIconPath": "static/me_s.png"
+			}
+		]
+	}
+}
