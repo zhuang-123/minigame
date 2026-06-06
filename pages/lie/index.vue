@@ -134,7 +134,7 @@ export default {
       const userId = uni.getStorageSync('user_id') || 'guest_' + Math.floor(Math.random() * 10000);
       const userName = uni.getStorageSync('user_name') || '玩家' + Math.floor(Math.random() * 10000);
       
-      websocketService.connect(userId, 'ws://127.0.0.1:8881/ws').then(() => {
+      websocketService.connect(userId, 'ws://120.55.84.53:8881/ws').then(() => {
         // 发送加入游戏消息
         const joinMessage = {
           Type: 'join',
