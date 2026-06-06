@@ -282,7 +282,7 @@ var _default = { data: function data() {return { // 游戏模式选项
     goToRule: function goToRule() {uni.navigateTo({ url: '/pages/lie/rule' });}, // 选择游戏模式
     selectMode: function selectMode(players) {this.selectedMode = players;}, // 开始匹配
     startMatch: function startMatch() {var _this = this;if (!this.selectedMode) {uni.showToast({ title: '请选择对战人数', icon: 'none' });return;}this.isMatching = true; // 连接 WebSocket 服务器，谎言扑克端口为 8881
-      var userId = uni.getStorageSync('user_id') || 'guest_' + Math.floor(Math.random() * 10000);var userName = uni.getStorageSync('user_name') || '玩家' + Math.floor(Math.random() * 10000);_websocket.default.connect(userId, 'ws://120.55.84.53:8881/ws').then(function () {// 发送加入游戏消息
+      var userId = uni.getStorageSync('user_id') || 'guest_' + Math.floor(Math.random() * 10000);var userName = uni.getStorageSync('user_name') || '玩家' + Math.floor(Math.random() * 10000);_websocket.default.connect(userId, 'ws://127.0.0.1:8881/ws').then(function () {// 发送加入游戏消息
         var joinMessage = { Type: 'join', Content: { id: userId, name: userName, gameSize: _this.selectedMode } };_websocket.default.sendMessage(JSON.stringify(joinMessage));uni.showToast({ title: '已开始匹配，等待其他玩家...', icon: 'none' }); // 记录匹配开始时间并开始计算匹配时长
         _this.matchStartTime = new Date();_this.matchDuration = 0;_this.startMatchTimer();}).catch(function (err) {
         uni.showToast({ title: '连接服务器失败', icon: 'none' });

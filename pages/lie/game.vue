@@ -411,16 +411,26 @@ export default {
       // 玩家是否出局
       playerEliminated: false,
 
-      // 牌型选项
+      // 牌型选项（按张数索引，1~5；4 张固定炸弹，5 张可选 straight/full_house/straight_flush）
       cardTypes: [
         { name: '单张', value: 'single' },
         { name: '对子', value: 'pair' },
         { name: '三条', value: 'triple' },
+        { name: '炸弹', value: 'bomb' },
         { name: '顺子', value: 'straight' },
         { name: '葫芦', value: 'full_house' },
-        { name: '炸弹', value: 'bomb' },
         { name: '同花顺', value: 'straight_flush' }
       ],
+      // 张数 → 自动牌型 映射（1=single, 2=pair, 3=triple, 4=bomb, 5=默认 straight 可改）
+      typeByCount: {
+        1: 'single',
+        2: 'pair',
+        3: 'triple',
+        4: 'bomb',
+        5: 'straight'
+      },
+      // 5 张牌可选的牌型（顺子/葫芦/同花顺）
+      fiveCardTypeValues: ['straight', 'full_house', 'straight_flush'],
       // 牌值选项
       cardValues: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
       // 发牌动画状态
@@ -672,9 +682,9 @@ export default {
       
       return possibleStraights;
     },
-    // 5张牌的牌型选项
+    // 5张牌的牌型选项（顺子 / 葫芦 / 同花顺；炸弹是 4 张，不在此列）
     fiveCardTypes() {
-      return this.cardTypes.filter(t => ['straight', 'full_house', 'straight_flush'].includes(t.value));
+      return this.cardTypes.filter(t => this.fiveCardTypeValues.includes(t.value));
     },
     isSelfTurn() {
       return !!this.currentTurnPlayerName && this.currentTurnPlayerName === this.myName;
@@ -901,24 +911,10 @@ export default {
       } else {
         this.selectedCards.push(index);
       }
-      
-      // 根据选择的牌数自动设置牌型
+
+      // 根据选择的牌数自动设置牌型（1=single, 2=pair, 3=triple, 4=bomb, 5=默认 straight）
       const cardCount = this.selectedCards.length;
-      if (cardCount === 1) {
-        this.selectedType = 'single';
-      } else if (cardCount === 2) {
-        this.selectedType = 'pair';
-      } else if (cardCount === 3) {
-        this.selectedType = 'triple';
-      } else if (cardCount === 4) {
-        this.selectedType = 'bomb';
-      } else if (cardCount === 5) {
-        // 5张牌默认选择顺子
-        this.selectedType = 'straight';
-      } else {
-        // 其他牌数清空牌型
-        this.selectedType = '';
-      }
+      this.selectedType = this.typeByCount[cardCount] || '';
     },
     
     // 选择牌型

@@ -581,16 +581,26 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
       // 玩家是否出局
       playerEliminated: false,
 
-      // 牌型选项
+      // 牌型选项（按张数索引，1~5；4 张固定炸弹，5 张可选 straight/full_house/straight_flush）
       cardTypes: [
       { name: '单张', value: 'single' },
       { name: '对子', value: 'pair' },
       { name: '三条', value: 'triple' },
+      { name: '炸弹', value: 'bomb' },
       { name: '顺子', value: 'straight' },
       { name: '葫芦', value: 'full_house' },
-      { name: '炸弹', value: 'bomb' },
       { name: '同花顺', value: 'straight_flush' }],
 
+      // 张数 → 自动牌型 映射（1=single, 2=pair, 3=triple, 4=bomb, 5=默认 straight 可改）
+      typeByCount: {
+        1: 'single',
+        2: 'pair',
+        3: 'triple',
+        4: 'bomb',
+        5: 'straight' },
+
+      // 5 张牌可选的牌型（顺子/葫芦/同花顺）
+      fiveCardTypeValues: ['straight', 'full_house', 'straight_flush'],
       // 牌值选项
       cardValues: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
       // 发牌动画状态
@@ -842,21 +852,21 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
       return possibleStraights;
     },
-    // 5张牌的牌型选项
-    fiveCardTypes: function fiveCardTypes() {
-      return this.cardTypes.filter(function (t) {return ['straight', 'full_house', 'straight_flush'].includes(t.value);});
+    // 5张牌的牌型选项（顺子 / 葫芦 / 同花顺；炸弹是 4 张，不在此列）
+    fiveCardTypes: function fiveCardTypes() {var _this2 = this;
+      return this.cardTypes.filter(function (t) {return _this2.fiveCardTypeValues.includes(t.value);});
     },
     isSelfTurn: function isSelfTurn() {
       return !!this.currentTurnPlayerName && this.currentTurnPlayerName === this.myName;
     },
     // 生成血条HTML
-    hpHearts: function hpHearts() {var _this2 = this;
+    hpHearts: function hpHearts() {var _this3 = this;
       console.log('生成血条，当前血量:', this.myHP);
       return Array(3).fill(0).map(function (_, index) {
         var heartIndex = index + 1;
         return {
           index: heartIndex,
-          active: heartIndex <= _this2.myHP };
+          active: heartIndex <= _this3.myHP };
 
       });
     },
@@ -869,7 +879,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
   methods: {
     // 启动倒计时
-    startCountdown: function startCountdown() {var _this3 = this;var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;var mustPlay = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    startCountdown: function startCountdown() {var _this4 = this;var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;var mustPlay = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       // 先停止之前的倒计时
       this.stopCountdown();
 
@@ -879,14 +889,14 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
       this.countdown.mustPlay = mustPlay;
 
       this.countdownTimer = setInterval(function () {
-        _this3.countdown.remainingTime--;
-        if (_this3.countdown.remainingTime <= 0) {
+        _this4.countdown.remainingTime--;
+        if (_this4.countdown.remainingTime <= 0) {
           // 在停止倒计时之前先检查是否需要自动出牌
-          var needAutoPlay = _this3.countdown.mustPlay && _this3.isSelfTurn && _this3.myCards.length > 0;
-          _this3.stopCountdown();
+          var needAutoPlay = _this4.countdown.mustPlay && _this4.isSelfTurn && _this4.myCards.length > 0;
+          _this4.stopCountdown();
           // 如果是必须出牌的状态，超时自动出第一张牌
           if (needAutoPlay) {
-            _this3.autoPlayFirstCard();
+            _this4.autoPlayFirstCard();
           }
         }
       }, 1000);
@@ -967,7 +977,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
     },
 
     // 将服务端 game_start 消息应用到对局状态（根据自己的 playerId 展示真实手牌）
-    applyGameStartMessage: function applyGameStartMessage(message) {var _this4 = this;
+    applyGameStartMessage: function applyGameStartMessage(message) {var _this5 = this;
       try {
         if (this.gameStartApplied) return;
         if (!message || !message.content) return;
@@ -1038,12 +1048,12 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
         if (cardsForDeal.length > 0) {
           cardsForDeal.forEach(function (c, idx) {
-            setTimeout(function () {return _this4.dealtCards.push(c);}, 500 + idx * 300);
+            setTimeout(function () {return _this5.dealtCards.push(c);}, 500 + idx * 300);
           });
-          setTimeout(function () {_this4.isDealing = false;}, 500 + cardsForDeal.length * 300 + 1000);
+          setTimeout(function () {_this5.isDealing = false;}, 500 + cardsForDeal.length * 300 + 1000);
         } else {
           // 没有手牌数据就直接结束动画
-          setTimeout(function () {_this4.isDealing = false;}, 800);
+          setTimeout(function () {_this5.isDealing = false;}, 800);
         }
 
         this.gameLogs.unshift('游戏开始！');
@@ -1054,13 +1064,13 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
     },
 
     // 开始发牌动画
-    startDealAnimation: function startDealAnimation() {var _this5 = this;
+    startDealAnimation: function startDealAnimation() {var _this6 = this;
       this.isDealing = true;
 
       // 动画结束后设置为非发牌状态
       var delayTime = 3000; // 3秒动画时间
       setTimeout(function () {
-        _this5.isDealing = false;
+        _this6.isDealing = false;
       }, delayTime);
     },
     // 选择卡牌
@@ -1072,23 +1082,9 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
         this.selectedCards.push(index);
       }
 
-      // 根据选择的牌数自动设置牌型
+      // 根据选择的牌数自动设置牌型（1=single, 2=pair, 3=triple, 4=bomb, 5=默认 straight）
       var cardCount = this.selectedCards.length;
-      if (cardCount === 1) {
-        this.selectedType = 'single';
-      } else if (cardCount === 2) {
-        this.selectedType = 'pair';
-      } else if (cardCount === 3) {
-        this.selectedType = 'triple';
-      } else if (cardCount === 4) {
-        this.selectedType = 'bomb';
-      } else if (cardCount === 5) {
-        // 5张牌默认选择顺子
-        this.selectedType = 'straight';
-      } else {
-        // 其他牌数清空牌型
-        this.selectedType = '';
-      }
+      this.selectedType = this.typeByCount[cardCount] || '';
     },
 
     // 选择牌型
@@ -1106,7 +1102,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
     },
 
     // 出牌
-    playCards: function playCards() {var _this6 = this;
+    playCards: function playCards() {var _this7 = this;
       // 验证牌型
       if (!this.validatePlay()) {
         uni.showToast({ title: '牌型不符合要求', icon: 'none' });
@@ -1186,7 +1182,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
         this.playerActions = this.playerActions.slice(0, 10);
       }
       // 从手牌中移除出的牌
-      this.myCards = this.myCards.filter(function (_, index) {return !_this6.selectedCards.includes(index);});
+      this.myCards = this.myCards.filter(function (_, index) {return !_this7.selectedCards.includes(index);});
       this.selectedCards = [];
       this.selectedType = '';
       this.selectedValue = '';
@@ -1487,7 +1483,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
     },
 
     // 处理 WebSocket 消息
-    handleWebSocketMessage: function handleWebSocketMessage(message) {var _this7 = this;
+    handleWebSocketMessage: function handleWebSocketMessage(message) {var _this8 = this;
       console.log('收到WebSocket消息:', message);
       console.log('消息类型:', message.type);
       console.log('消息内容:', message.content);
@@ -1502,10 +1498,10 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
       // 添加操作消息到左边消息框
       var addActionMessage = function addActionMessage(message) {
-        _this7.playerActions.unshift(message);
+        _this8.playerActions.unshift(message);
         // 限制消息数量，只显示最近的10条
-        if (_this7.playerActions.length > 10) {
-          _this7.playerActions = _this7.playerActions.slice(0, 10);
+        if (_this8.playerActions.length > 10) {
+          _this8.playerActions = _this8.playerActions.slice(0, 10);
         }
       };
 
@@ -1541,7 +1537,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
         // 延迟设置游戏数据，让发牌动画先播放
         setTimeout(function () {
-          console.log('处理game_start数据:', message.content, _this7.playerId);
+          console.log('处理game_start数据:', message.content, _this8.playerId);
           // 尝试通过playerId查找对应的玩家信息
           var myInfo = null;
           if (message.content.players) {
@@ -1549,25 +1545,25 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
             message.content.players.forEach(function (player, index) {
               console.log("\u73A9\u5BB6".concat(index, ": id=").concat(player.id, ", name=").concat(player.name, ", cards=").concat(player.cards ? player.cards.length : 0));
             });
-            myInfo = message.content.players.find(function (p) {return p.id === _this7.playerId;});
+            myInfo = message.content.players.find(function (p) {return p.id === _this8.playerId;});
             if (myInfo) {
               console.log('通过playerId找到玩家:', myInfo);
               // 提取手牌并转换格式，确保包含花色和点数
               if (myInfo.cards && myInfo.cards.length > 0) {
-                _this7.myCards = myInfo.cards.map(function (card) {
+                _this8.myCards = myInfo.cards.map(function (card) {
                   // 确保正确处理卡牌格式
                   var rank = card.rank ? card.rank.replace('Rank', '') : 'A';
                   // 正确处理花色，确保 0（黑桃）也能被正确识别
                   var suit = card.suit !== undefined ? card.suit : 'SuitSpade'; // 默认花色为黑桃
                   return { suit: suit, rank: rank };
                 });
-                _this7.myHP = myInfo.hp;
-                console.log('通过playerId查找的手牌:', _this7.myCards);
+                _this8.myHP = myInfo.hp;
+                console.log('通过playerId查找的手牌:', _this8.myCards);
               } else {
                 console.log('玩家手牌不存在或为空:', myInfo.id);
                 // 服务端未返回手牌，使用模拟手牌作为fallback
                 // 注意：这只是在服务端没有返回手牌时的临时方案
-                _this7.myCards = [
+                _this8.myCards = [
                 { suit: 'SuitSpade', rank: 'A' },
                 { suit: 'SuitHeart', rank: 'K' },
                 { suit: 'SuitDiamond', rank: 'Q' },
@@ -1579,25 +1575,25 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
                 { suit: 'SuitSpade', rank: '6' },
                 { suit: 'SuitHeart', rank: '5' }];
 
-                console.log('使用模拟手牌作为fallback:', _this7.myCards);
+                console.log('使用模拟手牌作为fallback:', _this8.myCards);
               }
             } else {
-              console.log('未找到匹配的playerId:', _this7.playerId);
+              console.log('未找到匹配的playerId:', _this8.playerId);
               // 尝试使用第一个玩家的手牌作为fallback
               if (message.content.players.length > 0 && message.content.players[0].cards) {
                 console.log('使用players[0]的手牌作为fallback:', message.content.players[0].cards);
-                _this7.myCards = message.content.players[0].cards.map(function (card) {
+                _this8.myCards = message.content.players[0].cards.map(function (card) {
                   // 确保正确处理卡牌格式
                   var rank = card.rank ? card.rank.replace('Rank', '') : 'A';
                   // 正确处理花色，确保 0（黑桃）也能被正确识别
                   var suit = card.suit !== undefined ? card.suit : 'SuitSpade'; // 默认花色为黑桃
                   return { suit: suit, rank: rank };
                 });
-                console.log('从players[0]获取的手牌:', _this7.myCards);
+                console.log('从players[0]获取的手牌:', _this8.myCards);
               } else {
                 // 服务端未返回手牌，使用模拟手牌作为fallback
                 // 注意：这只是在服务端没有返回手牌时的临时方案
-                _this7.myCards = [
+                _this8.myCards = [
                 { suit: 'SuitSpade', rank: 'A' },
                 { suit: 'SuitHeart', rank: 'K' },
                 { suit: 'SuitDiamond', rank: 'Q' },
@@ -1609,14 +1605,14 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
                 { suit: 'SuitSpade', rank: '6' },
                 { suit: 'SuitHeart', rank: '5' }];
 
-                console.log('使用模拟手牌作为fallback:', _this7.myCards);
+                console.log('使用模拟手牌作为fallback:', _this8.myCards);
               }
             }
           } else {
             console.log('message.content.players不存在');
             // 服务端未返回手牌，使用模拟手牌作为fallback
             // 注意：这只是在服务端没有返回手牌时的临时方案
-            _this7.myCards = [
+            _this8.myCards = [
             { suit: 'SuitSpade', rank: 'A' },
             { suit: 'SuitHeart', rank: 'K' },
             { suit: 'SuitDiamond', rank: 'Q' },
@@ -1628,15 +1624,15 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
             { suit: 'SuitSpade', rank: '6' },
             { suit: 'SuitHeart', rank: '5' }];
 
-            console.log('使用模拟手牌作为fallback:', _this7.myCards);
+            console.log('使用模拟手牌作为fallback:', _this8.myCards);
           }
           // 存储万能牌的花色和点数
-          _this7.wildCard = {
+          _this8.wildCard = {
             suit: message.content.wildCard.suit,
             rank: message.content.wildCard.rank.replace('Rank', '') };
 
-          _this7.opponents = message.content.players.
-          filter(function (p) {return p.id !== _this7.playerId;}).
+          _this8.opponents = message.content.players.
+          filter(function (p) {return p.id !== _this8.playerId;}).
           map(function (p) {return {
               name: p.name,
               avatar: '🎭',
@@ -1646,14 +1642,14 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
           // 设置剩余牌数
           // 一副牌有52张，3个玩家每人发10张，剩余52 - 3*10 = 22张
-          _this7.remainingCards = 22;
-          _this7.gameLogs.unshift('游戏开始！');
-          _this7.gameLogs.unshift("\u4E07\u80FD\u724C\uFF1A".concat(_this7.wildCard.rank));
+          _this8.remainingCards = 22;
+          _this8.gameLogs.unshift('游戏开始！');
+          _this8.gameLogs.unshift("\u4E07\u80FD\u724C\uFF1A".concat(_this8.wildCard.rank));
           addActionMessage('游戏开始！');
-          addActionMessage("\u4E07\u80FD\u724C\uFF1A".concat(_this7.wildCard.rank));
+          addActionMessage("\u4E07\u80FD\u724C\uFF1A".concat(_this8.wildCard.rank));
 
           // 依次发放自己的手牌
-          _this7.dealtCards = [];
+          _this8.dealtCards = [];
           // 尝试获取当前玩家的卡牌信息
           var currentPlayerCards = null;
           if (myInfo && myInfo.cards) {
@@ -1668,24 +1664,24 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
               setTimeout(function () {
                 var rank = card.rank ? card.rank.replace('Rank', '') : 'A';
                 var suit = card.suit || 'SuitSpade'; // 默认花色为黑桃
-                _this7.dealtCards.push({ suit: suit, rank: rank });
+                _this8.dealtCards.push({ suit: suit, rank: rank });
               }, 500 + index * 300);
             });
-          } else if (_this7.myCards.length > 0) {
+          } else if (_this8.myCards.length > 0) {
             // 使用模拟手牌进行发放动画
-            console.log('使用模拟手牌进行发牌动画:', _this7.myCards);
-            _this7.myCards.forEach(function (card, index) {
+            console.log('使用模拟手牌进行发牌动画:', _this8.myCards);
+            _this8.myCards.forEach(function (card, index) {
               setTimeout(function () {
-                _this7.dealtCards.push(card);
+                _this8.dealtCards.push(card);
               }, 500 + index * 300);
             });
           }
 
           // 动画结束后隐藏初始牌
-          var cardCount = currentPlayerCards ? currentPlayerCards.length : _this7.myCards.length;
+          var cardCount = currentPlayerCards ? currentPlayerCards.length : _this8.myCards.length;
           var delayTime = 500 + cardCount * 300 + 1000;
           setTimeout(function () {
-            _this7.isDealing = false;
+            _this8.isDealing = false;
           }, delayTime);
         }, 500);
       } else if (message.type === 'your_turn') {
@@ -1942,18 +1938,18 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
           console.log('强制更新UI后');
           // 再次强制更新
           setTimeout(function () {
-            _this7.$forceUpdate();
+            _this8.$forceUpdate();
             console.log('再次强制更新UI后');
           }, 100);
 
           // 再次强制更新，确保所有UI元素都能更新
           setTimeout(function () {
-            _this7.$forceUpdate();
+            _this8.$forceUpdate();
             console.log('再次强制更新UI后');
           }, 100);
           // 直接修改DOM来更新血条
           setTimeout(function () {
-            _this7.updateHPDisplay();
+            _this8.updateHPDisplay();
           }, 100);
           // 设置质疑失败标记，重新选择时不显示质疑按钮
           this.isChallengeFailed = true;
@@ -2007,9 +2003,9 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
         }
         // 清空出牌区
         setTimeout(function () {
-          _this7.showChallengeCards = false;
-          _this7.challengeCards = [];
-          _this7.lastPlay = {
+          _this8.showChallengeCards = false;
+          _this8.challengeCards = [];
+          _this8.lastPlay = {
             player: '',
             type: '',
             cards: [],
@@ -2205,7 +2201,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
     },
 
     // 处理从index.vue传递过来的game_start消息
-    handleGameStartMessage: function handleGameStartMessage(message) {var _this8 = this;
+    handleGameStartMessage: function handleGameStartMessage(message) {var _this9 = this;
       console.log('从index.vue收到game_start消息:', message);
       console.log('当前playerId:', this.playerId);
       console.log('game_start消息内容:', JSON.stringify(message, null, 2));
@@ -2226,29 +2222,29 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
       // 延迟设置游戏数据，让发牌动画先播放
       setTimeout(function () {
-        console.log('处理game_start数据:', message.content, _this8.playerId);
+        console.log('处理game_start数据:', message.content, _this9.playerId);
         // 尝试通过playerId查找对应的玩家信息
         var myInfo = null;
         if (message.content.players) {
-          myInfo = message.content.players.find(function (p) {return p.id === _this8.playerId;});
+          myInfo = message.content.players.find(function (p) {return p.id === _this9.playerId;});
           if (myInfo) {
             console.log('通过playerId找到玩家:', myInfo);
             // 提取手牌并转换格式，确保包含花色和点数
             if (myInfo.cards && myInfo.cards.length > 0) {
-              _this8.myCards = myInfo.cards.map(function (card) {
+              _this9.myCards = myInfo.cards.map(function (card) {
                 // 确保正确处理卡牌格式
                 var rank = card.rank ? card.rank.replace('Rank', '') : 'A';
                 // 正确处理花色，确保 0（黑桃）也能被正确识别
                 var suit = card.suit !== undefined ? card.suit : 'S'; // 默认花色为黑桃
                 return { suit: suit, rank: rank };
               });
-              _this8.myHP = myInfo.hp;
-              console.log('通过playerId查找的手牌:', _this8.myCards);
+              _this9.myHP = myInfo.hp;
+              console.log('通过playerId查找的手牌:', _this9.myCards);
             } else {
               console.log('玩家手牌不存在或为空:', myInfo.id);
               // 服务端未返回手牌，使用模拟手牌作为fallback
               // 注意：这只是在服务端没有返回手牌时的临时方案
-              _this8.myCards = [
+              _this9.myCards = [
               { suit: 'S', rank: 'A' },
               { suit: 'H', rank: 'K' },
               { suit: 'D', rank: 'Q' },
@@ -2260,25 +2256,25 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
               { suit: 'S', rank: '6' },
               { suit: 'H', rank: '5' }];
 
-              console.log('使用模拟手牌作为fallback:', _this8.myCards);
+              console.log('使用模拟手牌作为fallback:', _this9.myCards);
             }
           } else {
-            console.log('未找到匹配的playerId:', _this8.playerId);
+            console.log('未找到匹配的playerId:', _this9.playerId);
             // 尝试使用第一个玩家的手牌作为fallback
             if (message.content.players.length > 0 && message.content.players[0].cards) {
               console.log('使用players[0]的手牌作为fallback:', message.content.players[0].cards);
-              _this8.myCards = message.content.players[0].cards.map(function (card) {
+              _this9.myCards = message.content.players[0].cards.map(function (card) {
                 // 确保正确处理卡牌格式
                 var rank = card.rank ? card.rank.replace('Rank', '') : 'A';
                 // 正确处理花色，确保 0（黑桃）也能被正确识别
                 var suit = card.suit !== undefined ? card.suit : 'S'; // 默认花色为黑桃
                 return { suit: suit, rank: rank };
               });
-              console.log('从players[0]获取的手牌:', _this8.myCards);
+              console.log('从players[0]获取的手牌:', _this9.myCards);
             } else {
               // 服务端未返回手牌，使用模拟手牌作为fallback
               // 注意：这只是在服务端没有返回手牌时的临时方案
-              _this8.myCards = [
+              _this9.myCards = [
               { suit: 'S', rank: 'A' },
               { suit: 'H', rank: 'K' },
               { suit: 'D', rank: 'Q' },
@@ -2290,14 +2286,14 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
               { suit: 'S', rank: '6' },
               { suit: 'H', rank: '5' }];
 
-              console.log('使用模拟手牌作为fallback:', _this8.myCards);
+              console.log('使用模拟手牌作为fallback:', _this9.myCards);
             }
           }
         } else {
           console.log('message.content.players不存在');
           // 服务端未返回手牌，使用模拟手牌作为fallback
           // 注意：这只是在服务端没有返回手牌时的临时方案
-          _this8.myCards = [
+          _this9.myCards = [
           { suit: 'S', rank: 'A' },
           { suit: 'H', rank: 'K' },
           { suit: 'D', rank: 'Q' },
@@ -2309,15 +2305,15 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
           { suit: 'S', rank: '6' },
           { suit: 'H', rank: '5' }];
 
-          console.log('使用模拟手牌作为fallback:', _this8.myCards);
+          console.log('使用模拟手牌作为fallback:', _this9.myCards);
         }
         // 存储万能牌的花色和点数
-        _this8.wildCard = {
+        _this9.wildCard = {
           suit: message.content.wildCard.suit,
           rank: message.content.wildCard.rank.replace('Rank', '') };
 
-        _this8.opponents = message.content.players.
-        filter(function (p) {return p.id !== _this8.playerId;}).
+        _this9.opponents = message.content.players.
+        filter(function (p) {return p.id !== _this9.playerId;}).
         map(function (p) {return {
             name: p.name,
             avatar: '🎭',
@@ -2327,12 +2323,12 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
         // 设置剩余牌数
         // 一副牌有52张，3个玩家每人发10张，剩余52 - 3*10 = 22张
-        _this8.remainingCards = 22;
-        _this8.gameLogs.unshift('游戏开始！');
-        _this8.gameLogs.unshift("\u4E07\u80FD\u724C\uFF1A".concat(_this8.wildCard.rank));
+        _this9.remainingCards = 22;
+        _this9.gameLogs.unshift('游戏开始！');
+        _this9.gameLogs.unshift("\u4E07\u80FD\u724C\uFF1A".concat(_this9.wildCard.rank));
 
         // 依次发放自己的手牌
-        _this8.dealtCards = [];
+        _this9.dealtCards = [];
         // 尝试获取当前玩家的卡牌信息
         var currentPlayerCards = null;
         if (myInfo && myInfo.cards) {
@@ -2347,13 +2343,13 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
             setTimeout(function () {
               var rank = card.rank ? card.rank.replace('Rank', '') : 'A';
               var suit = card.suit || 'S'; // 默认花色为黑桃
-              _this8.dealtCards.push({ suit: suit, rank: rank });
+              _this9.dealtCards.push({ suit: suit, rank: rank });
             }, index * 300); // 每张牌间隔300ms
           });
 
           // 动画结束后设置为非发牌状态
           setTimeout(function () {
-            _this8.isDealing = false;
+            _this9.isDealing = false;
           }, currentPlayerCards.length * 300 + 1000);
         } else {
           // 没有真实手牌，使用模拟手牌进行发牌动画
@@ -2372,13 +2368,13 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
 
           mockCards.forEach(function (card, index) {
             setTimeout(function () {
-              _this8.dealtCards.push(card);
+              _this9.dealtCards.push(card);
             }, index * 300); // 每张牌间隔300ms
           });
 
           // 动画结束后设置为非发牌状态
           setTimeout(function () {
-            _this8.isDealing = false;
+            _this9.isDealing = false;
           }, mockCards.length * 300 + 1000);
         }
       }, 100);
@@ -2443,7 +2439,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
     },
 
     // 显示质疑结果
-    showChallengeResultModal: function showChallengeResultModal(success, message, cards) {var _this9 = this;
+    showChallengeResultModal: function showChallengeResultModal(success, message, cards) {var _this10 = this;
       this.challengeCards = cards;
       this.showChallengeCards = true;
       this.challengeResult = {
@@ -2453,7 +2449,7 @@ var _websocket = _interopRequireDefault(__webpack_require__(/*! ../../common/web
       this.showChallengeResult = true;
       // 3秒后自动关闭提示框
       setTimeout(function () {
-        _this9.closeChallengeResult();
+        _this10.closeChallengeResult();
       }, 3000);
     },
 
