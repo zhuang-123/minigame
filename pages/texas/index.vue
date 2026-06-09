@@ -185,49 +185,47 @@
 
     <!-- 比赛结果弹窗（type=game_result） -->
     <view class="result-mask" v-if="resultVisible">
-      <scroll-view scroll-y class="result-scroll">
-        <view class="result-card">
-          <view class="result-header">
-            <text class="result-icon">🏆</text>
-            <text class="result-title">本手结算</text>
-          </view>
+      <view class="result-container">
+        <!-- 标题 -->
+        <view class="result-header">
+          <text style="font-size: 50rpx;">🏆</text>
+          <text class="result-header-title">本手结算</text>
+        </view>
 
+        <!-- 可滚动内容区 -->
+        <scroll-view scroll-y class="result-body">
           <!-- 公共牌 -->
-          <view class="result-section" v-if="resultData.communityCards && resultData.communityCards.length > 0">
-            <text class="result-section-title">公共牌</text>
-            <view class="result-community-cards">
+          <view class="result-block" v-if="resultCommunityCards.length > 0">
+            <text class="result-block-title">公共牌</text>
+            <view class="result-cards-row">
               <view
-                v-for="(card, ci) in resultData.communityCards"
-                :key="ci"
-                class="result-card-item"
-                :class="cardSuitClass(card)"
+                v-for="(card, ci) in resultCommunityCards"
+                :key="'cc'+ci"
+                class="result-poker"
+                :style="{ color: (card.suit === '♥' || card.suit === '♦') ? '#e53e3e' : '#1a202c' }"
               >
-                <text class="rc-rank">{{ displayRank(card.rank) }}</text>
-                <text class="rc-suit">{{ card.suit }}</text>
+                <text class="result-poker-rank">{{ displayRank(card.rank) }}</text>
+                <text class="result-poker-suit">{{ card.suit }}</text>
               </view>
             </view>
           </view>
 
           <!-- 总池 -->
-          <view class="result-pot-summary">
-            <text class="pot-summary-label">总底池</text>
-            <text class="pot-summary-value">{{ resultData.totalPot || 0 }}</text>
+          <view class="result-pot-bar">
+            <text class="result-pot-label">总底池</text>
+            <text class="result-pot-value">{{ resultTotalPot }}</text>
           </view>
 
           <!-- 底池分配 -->
-          <view class="result-section" v-if="resultData.pots && resultData.pots.length > 0">
-            <text class="result-section-title">底池分配</text>
-            <view
-              v-for="(pot, pi) in resultData.pots"
-              :key="pi"
-              class="pot-item"
-            >
-              <view class="pot-header">
-                <text class="pot-label">{{ pot.index === 0 ? '主池' : '边池' + pot.index }}</text>
-                <text class="pot-amount">{{ pot.amount }}</text>
+          <view class="result-block" v-if="resultPots.length > 0">
+            <text class="result-block-title">底池分配</text>
+            <view v-for="(pot, pi) in resultPots" :key="'pot'+pi" class="result-pot-item">
+              <view class="result-pot-row">
+                <text class="result-pot-name">{{ pot.index === 0 ? '主池' : '边池' + pot.index }}</text>
+                <text class="result-pot-amount">{{ pot.amount }}</text>
               </view>
-              <view class="pot-winners">
-                <text class="pot-winner-tag" v-for="wid in pot.winners" :key="wid">
+              <view class="result-pot-winners">
+                <text v-for="(wid, wi) in pot.winners" :key="'pw'+wi" class="result-winner-tag">
                   {{ playerNameById(wid) }} +{{ pot.winnerCut }}
                 </text>
               </view>
@@ -235,79 +233,83 @@
           </view>
 
           <!-- 玩家详情 -->
-          <view class="result-section">
-            <text class="result-section-title">玩家详情</text>
+          <view class="result-block" v-if="resultPlayers.length > 0">
+            <text class="result-block-title">玩家详情</text>
             <view
-              v-for="(p, pi) in resultData.players"
-              :key="pi"
-              class="player-result-item"
-              :class="{ 'is-winner': p.isWinner, 'is-me': p.name === myName }"
+              v-for="(p, pi) in resultPlayers"
+              :key="'p'+pi"
+              class="result-player"
+              :class="{ 'player-win': p.isWinner, 'player-me': p.name === myName }"
             >
-              <view class="pr-top-row">
-                <view class="pr-name-row">
-                  <text class="pr-winner-badge" v-if="p.isWinner">★</text>
-                  <text class="pr-name">{{ p.name }}</text>
-                  <text class="pr-state" :class="stateClass(p.state)">{{ p.state }}</text>
+              <!-- 名字行 -->
+              <view class="result-player-top">
+                <view class="result-player-name-row">
+                  <text v-if="p.isWinner" class="result-star">★</text>
+                  <text class="result-player-name">{{ p.name }}</text>
+                  <text class="result-player-state">{{ p.state }}</text>
                 </view>
-                <view class="pr-chips-row">
-                  <text class="pr-chips-label">筹码</text>
-                  <text class="pr-chips-value">{{ p.chipsAfter }}</text>
+                <view class="result-player-chips-box">
+                  <text class="result-player-chips-label">筹码</text>
+                  <text class="result-player-chips-value">{{ p.chipsAfter }}</text>
                 </view>
               </view>
 
-              <!-- 底牌 -->
-              <view class="pr-cards-row" v-if="p.holeCards && p.holeCards.length > 0">
+              <!-- 底牌 + 牌型 -->
+              <view class="result-player-cards" v-if="p.holeCards.length > 0">
                 <view
                   v-for="(c, ci) in p.holeCards"
-                  :key="ci"
-                  class="result-card-item small"
-                  :class="cardSuitClass(c)"
+                  :key="'hc'+ci"
+                  class="result-poker result-poker-sm"
+                  :style="{ color: (c.suit === '♥' || c.suit === '♦') ? '#e53e3e' : '#1a202c' }"
                 >
-                  <text class="rc-rank">{{ displayRank(c.rank) }}</text>
-                  <text class="rc-suit">{{ c.suit }}</text>
+                  <text class="result-poker-rank">{{ displayRank(c.rank) }}</text>
+                  <text class="result-poker-suit">{{ c.suit }}</text>
                 </view>
-                <text class="pr-hand-rank" v-if="p.handRank">{{ p.handRank }}</text>
+                <text v-if="p.handRank" class="result-hand-rank">{{ p.handRank }}</text>
               </view>
 
               <!-- 最佳牌型 -->
-              <view class="pr-hand-cards" v-if="p.handCards && p.handCards.length > 0">
-                <text class="pr-hand-cards-label">最佳牌型</text>
-                <view class="pr-hand-cards-list">
+              <view class="result-best-hand" v-if="p.handCards.length > 0">
+                <text class="result-best-hand-label">最佳牌型</text>
+                <view class="result-cards-row">
                   <view
                     v-for="(c, ci) in p.handCards"
-                    :key="ci"
-                    class="result-card-item mini"
-                    :class="cardSuitClass(c)"
+                    :key="'bc'+ci"
+                    class="result-poker result-poker-xs"
+                    :style="{ color: (c.suit === '♥' || c.suit === '♦') ? '#e53e3e' : '#1a202c' }"
                   >
-                    <text class="rc-rank">{{ displayRank(c.rank) }}</text>
-                    <text class="rc-suit">{{ c.suit }}</text>
+                    <text class="result-poker-rank">{{ displayRank(c.rank) }}</text>
+                    <text class="result-poker-suit">{{ c.suit }}</text>
                   </view>
                 </view>
               </view>
 
               <!-- 投入/赢得/净变化 -->
-              <view class="pr-stats-row">
-                <view class="pr-stat">
-                  <text class="pr-stat-label">投入</text>
-                  <text class="pr-stat-value">{{ p.totalBet }}</text>
+              <view class="result-stats">
+                <view class="result-stat">
+                  <text class="result-stat-label">投入</text>
+                  <text class="result-stat-val">{{ p.totalBet }}</text>
                 </view>
-                <view class="pr-stat">
-                  <text class="pr-stat-label">赢得</text>
-                  <text class="pr-stat-value win">{{ p.won }}</text>
+                <view class="result-stat">
+                  <text class="result-stat-label">赢得</text>
+                  <text class="result-stat-val stat-win">{{ p.won }}</text>
                 </view>
-                <view class="pr-stat">
-                  <text class="pr-stat-label">净变化</text>
-                  <text class="pr-stat-value" :class="p.netChange >= 0 ? 'win' : 'lose'">
+                <view class="result-stat">
+                  <text class="result-stat-label">净变化</text>
+                  <text class="result-stat-val" :class="p.netChange >= 0 ? 'stat-win' : 'stat-lose'">
                     {{ p.netChange >= 0 ? '+' : '' }}{{ p.netChange }}
                   </text>
                 </view>
               </view>
             </view>
           </view>
+        </scroll-view>
 
-          <button class="start-game-btn result-continue-btn" @tap="closeResult">继续</button>
+        <!-- 固定底部按钮 -->
+        <view class="result-footer">
+          <button class="start-game-btn" @tap="closeResult">继续</button>
         </view>
-      </scroll-view>
+      </view>
     </view>
   </view>
 </template>
@@ -413,13 +415,11 @@ export default {
       logs: [],
       // game_result 结算弹窗
       resultVisible: false,
-      resultData: {
-        communityCards: [],
-        pots: [],
-        players: [],
-        winners: [],
-        totalPot: 0
-      }
+      resultCommunityCards: [],
+      resultPots: [],
+      resultPlayers: [],
+      resultWinners: [],
+      resultTotalPot: 0
     };
   },
 
@@ -782,40 +782,69 @@ export default {
 
     // 处理 game_result 消息
     handleGameResult(message) {
-      console.log('收到 game_result 消息:', message);
-      this.resultData = {
-        communityCards: message.community_cards || message.communityCards || [],
-        pots: message.pots || [],
-        players: message.players || [],
-        winners: message.winners || [],
-        totalPot: message.total_pot || message.totalPot || 0
-      };
+      console.log('收到 game_result 原始消息:', JSON.stringify(message));
+
+      // 直接设置独立属性，避免嵌套对象的 Vue 2 响应式问题
+      this.resultCommunityCards = (message.community_cards || []).map(c => ({
+        suit: c.suit || '',
+        rank: c.rank || ''
+      }));
+
+      this.resultPots = (message.pots || []).map(pot => ({
+        index: pot.index || 0,
+        amount: pot.amount || 0,
+        eligible: pot.eligible || [],
+        winners: pot.winners || [],
+        winnerCut: pot.winner_cut || 0
+      }));
+
+      this.resultPlayers = (message.players || []).map(p => ({
+        id: p.id || '',
+        name: p.name || '',
+        state: p.state || '',
+        holeCards: p.hole_cards || [],
+        handRank: p.hand_rank || '',
+        handCards: p.hand_cards || [],
+        totalBet: typeof p.total_bet === 'number' ? p.total_bet : 0,
+        won: typeof p.won === 'number' ? p.won : 0,
+        netChange: typeof p.net_change === 'number' ? p.net_change : 0,
+        chipsAfter: typeof p.chips_after === 'number' ? p.chips_after : 0,
+        isWinner: !!p.is_winner
+      }));
+
+      this.resultWinners = message.winners || [];
+      this.resultTotalPot = typeof message.total_pot === 'number' ? message.total_pot : 0;
       this.resultVisible = true;
+
+      console.log('设置完成 - 社区牌:', this.resultCommunityCards.length,
+        '底池:', this.resultPots.length,
+        '玩家:', this.resultPlayers.length,
+        '总额:', this.resultTotalPot);
+
       this.logs.unshift('🏆 本手结算');
     },
 
     // 关闭结算弹窗
     closeResult() {
       this.resultVisible = false;
-      this.showdownInfo = { show: false, text: '' };
+      this.resultCommunityCards = [];
+      this.resultPots = [];
+      this.resultPlayers = [];
+      this.resultWinners = [];
+      this.resultTotalPot = 0;
     },
 
     // 通过玩家ID获取玩家名称
     playerNameById(id) {
-      const p = this.resultData.players.find(p => p.id === id);
+      const p = this.resultPlayers.find(p => p.id === id);
       return p ? p.name : id;
     },
 
     // 获取牌的花色CSS类
-    cardSuitClass(card) {
-      if (!card || !card.suit) return 'spades';
-      const suitMap = {
-        '♠': 'spades',
-        '♥': 'hearts',
-        '♦': 'diamonds',
-        '♣': 'clubs'
-      };
-      return suitMap[card.suit] || 'spades';
+    cardSuitClass(suit) {
+      if (!suit) return 'spades';
+      const map = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
+      return map[suit] || 'spades';
     },
 
     // 显示牌面值（T转换为10）
@@ -1388,343 +1417,363 @@ export default {
 /* ========== 比赛结果弹窗 ========== */
 .result-mask {
   position: fixed;
-  inset: 0;
-  background: rgba(5, 13, 5, 0.95);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
-  padding: 40rpx 20rpx;
 }
 
-.result-scroll {
-  width: 100%;
-  max-height: 90vh;
-}
-
-.result-card {
-  background: rgba(26, 58, 26, 0.95);
-  border: 2rpx solid rgba(240, 192, 72, 0.4);
+.result-container {
+  position: relative;
+  width: 600rpx;
+  height: 70vh;
+  background: #1a2e1a;
+  border: 2rpx solid #f0c048;
   border-radius: 24rpx;
-  padding: 40rpx 30rpx;
-  margin: 0 auto;
-  max-width: 680rpx;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* 标题：绝对定位在顶部 */
 .result-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16rpx;
-  margin-bottom: 30rpx;
+  gap: 2rpx;
+  padding: 16rpx 24rpx 12rpx;
+  background: #243824;
+  border-bottom: 1rpx solid #3a5a3a;
+  z-index: 1;
+  box-sizing: border-box;
 }
 
-.result-icon {
-  font-size: 80rpx;
-  animation: float 2s ease-in-out infinite;
-}
-
-.result-title {
-  font-size: 40rpx;
+.result-header-title {
+  font-size: 28rpx;
   font-weight: 800;
   color: #f0c048;
   letter-spacing: 4rpx;
 }
 
-.result-section {
-  margin-bottom: 30rpx;
+/* 滚动区：绝对定位，上下留出标题和按钮的空间 */
+.result-body {
+  position: absolute;
+  top: 90rpx;
+  bottom: 90rpx;
+  left: 0;
+  right: 0;
+  padding: 8rpx 16rpx;
+  box-sizing: border-box;
 }
 
-.result-section-title {
+.result-block {
+  margin-bottom: 10rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.result-block-title {
   display: block;
-  font-size: 26rpx;
+  font-size: 20rpx;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 16rpx;
-  padding-bottom: 8rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+  color: #8aaa8a;
+  margin-bottom: 6rpx;
+  padding-bottom: 4rpx;
+  border-bottom: 1rpx solid #3a5a3a;
 }
 
-/* 公共牌展示 */
-.result-community-cards {
+/* 扑克牌 */
+.result-cards-row {
   display: flex;
-  gap: 12rpx;
+  gap: 4rpx;
   justify-content: center;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.result-card-item {
+.result-poker {
   background: #fff;
-  border-radius: 8rpx;
-  padding: 8rpx 12rpx;
+  border-radius: 4rpx;
+  padding: 4rpx 6rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rpx;
-  min-width: 60rpx;
+  gap: 0;
+  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
-.result-card-item.small {
-  min-width: 50rpx;
-  padding: 6rpx 10rpx;
+.result-poker-sm {
+  padding: 3rpx 5rpx;
 }
 
-.result-card-item.mini {
-  min-width: 40rpx;
-  padding: 4rpx 8rpx;
+.result-poker-xs {
+  padding: 2rpx 4rpx;
 }
 
-.result-card-item.hearts,
-.result-card-item.diamonds {
-  color: #e53e3e;
-}
-
-.result-card-item.spades,
-.result-card-item.clubs {
-  color: #1a202c;
-}
-
-.rc-rank {
-  font-size: 24rpx;
-  font-weight: 800;
-}
-
-.result-card-item.small .rc-rank {
+.result-poker-rank {
   font-size: 20rpx;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
-.result-card-item.mini .rc-rank {
+.result-poker-sm .result-poker-rank {
   font-size: 16rpx;
 }
 
-.rc-suit {
-  font-size: 20rpx;
+.result-poker-xs .result-poker-rank {
+  font-size: 12rpx;
 }
 
-.result-card-item.small .rc-suit {
-  font-size: 18rpx;
+.result-poker-suit {
+  font-size: 16rpx;
+  line-height: 1.1;
 }
 
-.result-card-item.mini .rc-suit {
-  font-size: 14rpx;
+.result-poker-sm .result-poker-suit {
+  font-size: 12rpx;
 }
 
-/* 总池摘要 */
-.result-pot-summary {
+.result-poker-xs .result-poker-suit {
+  font-size: 10rpx;
+}
+
+/* 总池 */
+.result-pot-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(240, 192, 72, 0.1);
-  border: 1rpx solid rgba(240, 192, 72, 0.3);
-  border-radius: 16rpx;
-  padding: 20rpx 24rpx;
-  margin-bottom: 30rpx;
+  background: #2a4a2a;
+  border: 1rpx solid #3a6a3a;
+  border-radius: 10rpx;
+  padding: 10rpx 14rpx;
+  margin-bottom: 10rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.pot-summary-label {
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.7);
+.result-pot-label {
+  font-size: 20rpx;
+  color: #8aaa8a;
   font-weight: 600;
 }
 
-.pot-summary-value {
-  font-size: 36rpx;
+.result-pot-value {
+  font-size: 28rpx;
   font-weight: 800;
   color: #f0c048;
 }
 
 /* 底池分配 */
-.pot-item {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
-  border-radius: 12rpx;
-  padding: 16rpx;
-  margin-bottom: 12rpx;
-}
-
-.pot-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10rpx;
-}
-
-.pot-label {
-  font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 600;
-}
-
-.pot-amount {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #f0c048;
-}
-
-.pot-winners {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-}
-
-.pot-winner-tag {
-  background: rgba(72, 187, 120, 0.15);
-  color: #68d391;
-  font-size: 20rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx;
-  border: 1rpx solid rgba(72, 187, 120, 0.3);
-}
-
-/* 玩家结果详情 */
-.player-result-item {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
-  border-radius: 16rpx;
-  padding: 20rpx;
-  margin-bottom: 16rpx;
-}
-
-.player-result-item.is-winner {
-  background: rgba(240, 192, 72, 0.08);
-  border-color: rgba(240, 192, 72, 0.25);
-}
-
-.player-result-item.is-me {
-  border-color: rgba(72, 187, 120, 0.4);
-  border-width: 2rpx;
-}
-
-.pr-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16rpx;
-}
-
-.pr-name-row {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.pr-winner-badge {
-  font-size: 24rpx;
-  color: #f0c048;
-}
-
-.pr-name {
-  font-size: 26rpx;
-  font-weight: 700;
-  color: #fff;
-}
-
-.pr-state {
-  font-size: 18rpx;
-  padding: 2rpx 8rpx;
+.result-pot-item {
+  background: #243824;
+  border: 1rpx solid #3a5a3a;
   border-radius: 8rpx;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  padding: 8rpx 10rpx;
+  margin-bottom: 6rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.pr-state.folded {
-  background: rgba(252, 129, 129, 0.15);
-  color: #fc8181;
-}
-
-.pr-state.allin {
-  background: rgba(183, 148, 244, 0.15);
-  color: #b794f4;
-}
-
-.pr-chips-row {
+.result-pot-row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2rpx;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4rpx;
 }
 
-.pr-chips-label {
+.result-pot-name {
   font-size: 18rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #8aaa8a;
 }
 
-.pr-chips-value {
-  font-size: 26rpx;
+.result-pot-amount {
+  font-size: 22rpx;
   font-weight: 700;
   color: #f0c048;
 }
 
-/* 底牌 */
-.pr-cards-row {
+.result-pot-winners {
   display: flex;
-  align-items: center;
-  gap: 10rpx;
-  margin-bottom: 12rpx;
   flex-wrap: wrap;
-}
-
-.pr-hand-rank {
-  font-size: 20rpx;
-  color: #68d391;
-  font-weight: 600;
-  margin-left: 8rpx;
-}
-
-/* 最佳牌型 */
-.pr-hand-cards {
-  margin-bottom: 12rpx;
-}
-
-.pr-hand-cards-label {
-  display: block;
-  font-size: 18rpx;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 8rpx;
-}
-
-.pr-hand-cards-list {
-  display: flex;
-  gap: 6rpx;
-  flex-wrap: wrap;
-}
-
-/* 统计行 */
-.pr-stats-row {
-  display: flex;
-  gap: 20rpx;
-  padding-top: 12rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.06);
-}
-
-.pr-stat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 4rpx;
 }
 
-.pr-stat-label {
+.result-winner-tag {
+  background: #2a4a2a;
+  color: #68d391;
+  font-size: 14rpx;
+  padding: 2rpx 6rpx;
+  border-radius: 6rpx;
+  border: 1rpx solid #3a6a3a;
+}
+
+/* 玩家卡片 */
+.result-player {
+  background: #243824;
+  border: 1rpx solid #3a5a3a;
+  border-radius: 8rpx;
+  padding: 10rpx;
+  margin-bottom: 8rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.result-player.player-win {
+  background: #3a3a1a;
+  border-color: #8a7a2a;
+}
+
+.result-player.player-me {
+  border-color: #4a8a4a;
+  border-width: 2rpx;
+}
+
+.result-player-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+
+.result-player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.result-star {
+  color: #f0c048;
   font-size: 18rpx;
-  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
 }
 
-.pr-stat-value {
-  font-size: 24rpx;
+.result-player-name {
+  font-size: 20rpx;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
-.pr-stat-value.win {
+.result-player-state {
+  font-size: 12rpx;
+  padding: 1rpx 4rpx;
+  border-radius: 4rpx;
+  background: #3a5a3a;
+  color: #8aaa8a;
+  flex-shrink: 0;
+}
+
+.result-player-chips-box {
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: 6rpx;
+}
+
+.result-player-chips-label {
+  font-size: 10rpx;
+  color: #6a8a6a;
+  display: block;
+}
+
+.result-player-chips-value {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #f0c048;
+}
+
+.result-player-cards {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  margin-bottom: 4rpx;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.result-hand-rank {
+  font-size: 16rpx;
+  color: #68d391;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.result-best-hand {
+  margin-bottom: 4rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.result-best-hand-label {
+  font-size: 12rpx;
+  color: #6a8a6a;
+  display: block;
+  margin-bottom: 2rpx;
+}
+
+.result-stats {
+  display: flex;
+  gap: 8rpx;
+  padding-top: 6rpx;
+  border-top: 1rpx solid #3a5a3a;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.result-stat {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.result-stat-label {
+  font-size: 12rpx;
+  color: #6a8a6a;
+  display: block;
+}
+
+.result-stat-val {
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #ccc;
+}
+
+.stat-win {
   color: #68d391;
 }
 
-.pr-stat-value.lose {
+.stat-lose {
   color: #fc8181;
 }
 
-.result-continue-btn {
-  margin-top: 20rpx;
+/* 固定底部按钮：绝对定位在底部 */
+.result-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8rpx 16rpx 14rpx;
+  background: #243824;
+  border-top: 1rpx solid #3a5a3a;
+  z-index: 1;
+  box-sizing: border-box;
 }
 </style>
