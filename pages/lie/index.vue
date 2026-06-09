@@ -1,7 +1,7 @@
 <template>
   <view class="game-page">
     <!-- 背景图片 -->
-    <image src="/static/liepoker/background.png" mode="scaleToFill" class="background-image"></image>
+    <image src="https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/background.png" mode="scaleToFill" class="background-image"></image>
     
     <!-- 顶部导航（右上角） -->
     <view class="top-nav">
@@ -21,21 +21,21 @@
           :class="{ active: selectedMode === 3 }"
           @tap="selectMode(3)"
         >
-          <image src="/static/liepoker/dual_3.png" mode="aspectFit" class="mode-image"></image>
+          <image src="https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/dual_3.png" mode="aspectFit" class="mode-image"></image>
         </view>
         <view 
           class="mode-card"
           :class="{ active: selectedMode === 4 }"
           @tap="selectMode(4)"
         >
-          <image src="/static/liepoker/dual_4.png" mode="aspectFit" class="mode-image"></image>
+          <image src="https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/dual_4.png" mode="aspectFit" class="mode-image"></image>
         </view>
         <view 
           class="mode-card"
           :class="{ active: selectedMode === 5 }"
           @tap="selectMode(5)"
         >
-          <image src="/static/liepoker/dual_5.png" mode="aspectFit" class="mode-image"></image>
+          <image src="https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/dual_5.png" mode="aspectFit" class="mode-image"></image>
         </view>
       </view>
     </view>
@@ -47,7 +47,7 @@
         :disabled="!selectedMode"
         @tap="startMatch"
       >
-        <image :src="selectedMode ? '/static/liepoker/match_button.png' : '/static/liepoker/match_disable_button.png'" mode="aspectFit" class="start-btn-image"></image>
+        <image :src="selectedMode ? 'https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/match_button.png' : 'https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/match_disable_button.png'" mode="aspectFit" class="start-btn-image"></image>
       </button>
     </view>
 

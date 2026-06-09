@@ -1,7 +1,7 @@
 <template>
   <view class="game-page">
     <!-- 背景图片 -->
-    <image src="/static/liepoker/desk.png" mode="scaleToFill" class="background-image"></image>
+    <image src="https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/desk.png" mode="scaleToFill" class="background-image"></image>
 
     <!-- 玩家信息区域 -->
     <!-- 自己（左下角） -->
@@ -99,7 +99,7 @@
       
       <!-- 牌堆 -->
       <view class="card-deck" v-if="!isDealing">
-        <image src="/static/liepoker/rear.png" class="deck-image" />
+        <image src="https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/rear.png" class="deck-image" />
         <view class="deck-count">{{ remainingCards }}</view>
       </view>
       
@@ -2213,12 +2213,12 @@ export default {
     // 获取卡牌图片路径
     getCardImage(card) {
       if (card === 'back' || card === 'rear') {
-        return '/static/liepoker/rear.png';
+        return 'https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/rear.png';
       } else if (typeof card === 'string' && card.startsWith('W')) {
         // 万能牌，使用金色背景
         const value = card.substring(1);
         const mappedValue = value === '10' ? '10' : value === 'J' ? '11' : value === 'Q' ? '12' : value === 'K' ? '13' : value === 'A' ? '14' : value;
-        return `/static/liepoker/5-${mappedValue}.png`;
+        return `https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/5-${mappedValue}.png`;
       } else if (typeof card === 'object' && card.suit && card.rank) {
         // 处理包含花色和点数的卡牌对象
         const valueMap = {
@@ -2243,7 +2243,7 @@ export default {
         
         const suit = suitMap[card.suit] || '0'; // 默认黑桃
         const value = valueMap[rank] || rank;
-        return `/static/liepoker/${suit}-${value}.png`;
+        return `https://bucket-percent.oss-cn-hangzhou.aliyuncs.com/asset/liepoker/${suit}-${value}.png`;
       } else if (typeof card === 'string') {
         // 处理普通字符串类型的卡牌（兼容旧格式）
         const valueMap = {

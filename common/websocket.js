@@ -48,6 +48,24 @@ class WebSocketService {
                     this.reconnectAttempts = 0;
                     this.isDisconnecting = false; // 重置断开连接标志
 
+                    // 连接打开后必须先把 userID 发给服务端，
+                    // 服务端在收到 userID 之前会一直阻塞在 ReadMessage，
+                    // 不会把这个连接放进匹配队列。
+                    if (this.userId) {
+                        console.log('连接已打开，发送 userID:', this.userId);
+                        this.socketTask.send({
+                            data: this.userId,
+                            success: () => {
+                                console.log('userID 发送成功');
+                            },
+                            fail: (error) => {
+                                console.error('userID 发送失败:', error);
+                            }
+                        });
+                    } else {
+                        console.warn('连接已打开，但 userId 为空，未发送身份');
+                    }
+
                     // 发送队列中的消息
                     this.flushMessageQueue();
                     resolve();
