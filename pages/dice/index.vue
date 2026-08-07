@@ -189,7 +189,7 @@ export default {
       isPeeTarget: false, // 是否被劈中，需要回复
       
       // 倒计时相关
-      countdown: 15, // 倒计时时间（秒）
+      countdown: 60, // 倒计时时间（秒）
       countdownTimer: null, // 倒计时计时器
       lastCall: { // 上一个叫骰信息
         quantity: 0,
@@ -243,7 +243,7 @@ export default {
   methods: {
     // 连接WebSocket服务器
     connectWebSocket() {
-      websocketService.connect(this.userId, 'ws://120.55.84.53:8888/ws').then(() => {
+      websocketService.connect(this.userId, 'ws://localhost:8888/ws').then(() => {
         this.isConnected = true;
         this.gameStatus = '正在匹配玩家...';
         this.gameHistory.unshift('已连接到服务器，正在匹配玩家...');
@@ -570,13 +570,13 @@ export default {
       // 游戏已结束不开始倒计时
       if (this.gameEnded) return;
       
-      console.log('开始倒计时，重置为15秒');
+      console.log('开始倒计时，重置为60秒');
       
       // 强制清除之前的倒计时，确保完全重置
       this.clearCountdown();
       
-      // 强制重置倒计时时间为15秒
-      this.countdown = 15;
+      // 强制重置倒计时时间为60秒
+      this.countdown = 60;
       console.log('倒计时已重置为:', this.countdown);
       
       // 开始新的倒计时
@@ -653,7 +653,7 @@ export default {
         console.log('清除倒计时');
         clearInterval(this.countdownTimer);
         this.countdownTimer = null;
-        this.countdown = 15;
+        this.countdown = 60;
         console.log('倒计时已清除，重置为:', this.countdown);
       }
     },

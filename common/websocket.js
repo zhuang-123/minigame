@@ -15,6 +15,24 @@ class WebSocketService {
         this.serverUrl = '';
         this.messageTimeout = 5000; // 消息发送超时时间
         this.messageRetries = 3; // 消息重发次数
+        // 正在进行的连接 Promise，用于幂等：重复 connect() 复用同一个，避免建多条连接
+        this.connectPromise = null;
+    }
+
+    // 关闭并「解绑」当前 socket：先把 this.socketTask 置空，
+    // 这样旧 socket 后续触发的 onClose/onError 回调会因身份校验失败而被忽略，
+    // 不会再触发重连，从根本上杜绝重连风暴。
+    teardownSocket() {
+        const old = this.socketTask;
+        this.socketTask = null;
+        this.isConnected = false;
+        if (old) {
+            try {
+                old.close({});
+            } catch (_) {
+                // ignore
+            }
+        }
     }
 
     // 连接WebSocket服务器
@@ -22,27 +40,42 @@ class WebSocketService {
         this.userId = userId;
         this.serverUrl = serverUrl;
 
-        return new Promise((resolve, reject) => {
+        // 幂等 1：已经连上了，直接复用
+        if (this.isConnected && this.socketTask) {
+            console.log('WebSocket 已连接，复用现有连接');
+            return Promise.resolve();
+        }
+        // 幂等 2：正在连接中（例如连点两次开始游戏），复用同一个 Promise，不再建新连接
+        if (this.connectPromise) {
+            console.log('WebSocket 正在连接中，复用进行中的连接请求');
+            return this.connectPromise;
+        }
+
+        this.connectPromise = new Promise((resolve, reject) => {
             try {
-                // 关闭已存在的连接
-                if (this.socketTask) {
-                    this.disconnect();
-                }
+                // 关闭并解绑可能残留的旧连接
+                this.teardownSocket();
 
                 // 使用微信小程序的WebSocket API
-                this.socketTask = wx.connectSocket({
+                const socketTask = wx.connectSocket({
                     url: serverUrl,
                     success: () => {
                         console.log('WebSocket连接成功');
                     },
                     fail: (error) => {
+                        // 仅当这条 socket 仍是当前 socket 时才处理
+                        if (this.socketTask !== socketTask) return;
                         console.error('WebSocket连接失败:', error);
+                        this.connectPromise = null;
                         reject(error);
                     }
                 });
+                this.socketTask = socketTask;
 
                 // 监听连接打开
-                this.socketTask.onOpen(() => {
+                socketTask.onOpen(() => {
+                    // 已被更新的连接取代：忽略这条过期 socket 的事件
+                    if (this.socketTask !== socketTask) return;
                     console.log('WebSocket连接已打开');
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
@@ -53,7 +86,7 @@ class WebSocketService {
                     // 不会把这个连接放进匹配队列。
                     if (this.userId) {
                         console.log('连接已打开，发送 userID:', this.userId);
-                        this.socketTask.send({
+                        socketTask.send({
                             data: this.userId,
                             success: () => {
                                 console.log('userID 发送成功');
@@ -68,35 +101,44 @@ class WebSocketService {
 
                     // 发送队列中的消息
                     this.flushMessageQueue();
+                    this.connectPromise = null;
                     resolve();
                 });
 
                 // 监听消息
-                this.socketTask.onMessage((res) => {
+                socketTask.onMessage((res) => {
+                    if (this.socketTask !== socketTask) return;
                     console.log('收到WebSocket消息:', res.data);
                     this.handleMessage(res.data);
                 });
 
                 // 监听错误
-                this.socketTask.onError((error) => {
+                socketTask.onError((error) => {
+                    if (this.socketTask !== socketTask) return; // 旧连接的错误，忽略
                     console.error('WebSocket错误:', error);
                     this.isConnected = false;
+                    this.connectPromise = null;
                     this.attemptReconnect();
                 });
 
                 // 监听关闭
-                this.socketTask.onClose(() => {
+                socketTask.onClose(() => {
+                    if (this.socketTask !== socketTask) return; // 旧连接关闭，忽略，不重连
                     console.log('WebSocket连接关闭');
                     this.isConnected = false;
+                    this.socketTask = null;
+                    this.connectPromise = null;
                     // 触发连接关闭事件，通知组件清除倒计时
                     uni.$emit('websocketClose');
                     this.attemptReconnect();
                 });
             } catch (error) {
                 console.error('WebSocket连接失败:', error);
+                this.connectPromise = null;
                 reject(error);
             }
         });
+        return this.connectPromise;
     }
 
     // 发送消息（带重试机制）
@@ -203,22 +245,13 @@ class WebSocketService {
 
     // 断开连接
     disconnect() {
-        if (this.socketTask) {
-            this.socketTask.close({
-                success: () => {
-                    console.log('WebSocket连接已关闭');
-                },
-                fail: (error) => {
-                    console.error('关闭WebSocket连接失败:', error);
-                }
-            });
-            this.socketTask = null;
-            this.isConnected = false;
-            // 重置重连计数器
-            this.reconnectAttempts = 0;
-            // 设置一个标志，防止重连
-            this.isDisconnecting = true;
-        }
+        // 设置标志，防止重连
+        this.isDisconnecting = true;
+        // 重置重连计数器与进行中的连接 Promise
+        this.reconnectAttempts = 0;
+        this.connectPromise = null;
+        // 关闭并解绑当前 socket（解绑后其 onClose 不会再触发重连）
+        this.teardownSocket();
     }
 
     // 检查连接状态

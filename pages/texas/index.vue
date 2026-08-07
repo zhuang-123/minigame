@@ -452,10 +452,15 @@ export default {
 
     // 开始游戏（连接服务器并加入匹配队列）
     startGame() {
+      // 防重入：连点两次时，第一次的连接还在进行中（gameState 仍是 waiting），
+      // 直接忽略后续点击，避免建立多条 WebSocket 连接。
+      if (this._connecting) return;
+      this._connecting = true;
+
       const userId = uni.getStorageSync('user_id') || ('guest_' + Math.floor(Math.random() * 100000));
       uni.setStorageSync('user_id', userId);
 
-      websocketService.connect(userId, 'ws://localhost:8887/ws').then(() => {
+      websocketService.connect(userId, 'ws://120.55.84.53:8887/ws').then(() => {
         const joinMessage = { type: 'join', player: this.myName };
         websocketService.sendMessage(JSON.stringify(joinMessage));
 
@@ -469,6 +474,8 @@ export default {
         uni.showToast({ title: '已连接服务器，正在寻找对手...', icon: 'none' });
       }).catch(() => {
         uni.showToast({ title: '连接服务器失败', icon: 'none' });
+      }).finally(() => {
+        this._connecting = false;
       });
     },
 
