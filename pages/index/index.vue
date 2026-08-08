@@ -237,10 +237,10 @@ export default {
           }
         });
       } else if (game.path === '/pages/dice/index') {
-        // 叫骰游戏，需要先登录
+        // 叫骰游戏，需要先登录，登录后进入人数选择/开房间入口页
         let uid = await this.ensureLogin()
         if (uid) {
-          uni.navigateTo({ url: game.path })
+          uni.navigateTo({ url: '/pages/dice/select' })
         }
       } else if (game.path === '/pages/texas/index') {
         // 德州扑克，需要先登录后跳转规则页

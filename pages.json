@@ -34,6 +34,22 @@
 						"navigationBarBackgroundColor": "#0B63F6",
 						"navigationBarTextStyle": "white"
 					}
+				},
+				{
+					"path": "select",
+					"style": {
+						"navigationBarTitleText": "快速匹配",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
+				},
+				{
+					"path": "room",
+					"style": {
+						"navigationBarTitleText": "房间对战",
+						"navigationBarBackgroundColor": "#0B63F6",
+						"navigationBarTextStyle": "white"
+					}
 				}
 			]
 		},

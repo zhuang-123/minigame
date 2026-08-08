@@ -855,44 +855,17 @@ export default {
 
     // 再来一局
     playAgain() {
-      // 重置游戏状态
-      this.gameEnded = false;
-      this.canCall = false;
-      this.canOpen = false;
-      this.canPee = false;
-      this.canCounterPee = false;
-      this.hasCalled = false;
-      this.isMatching = true; // 重新开始匹配
-
-      // 重置玩家列表，只保留自己
-      this.players = [
-        {
-          id: 1,
-          name: '我',
-          avatar: '../../static/me.png',
-          status: '准备中',
-          dice: [],
-          showDice: false,
-          isCurrent: true,
-          isWinner: false,
-          isLoser: false,
-          userId: this.userId
-        }
-      ];
-
-      // 添加历史记录
-      this.gameHistory.unshift('准备开始新一局游戏...');
-
-      // 断开当前WebSocket连接
+      // 断开当前WebSocket连接（服务端在收到新的匹配/房间意图之前不会处理游戏消息，
+      // 因此不能直接重连后停留在本页——必须回到选择人数/房间页重新发起意图）
       websocketService.disconnect();
-
-      // 重新连接WebSocket
-      this.connectWebSocket();
 
       uni.showToast({
         title: '准备开始新一局',
         icon: 'success'
       });
+
+      // 返回快速匹配页，重新选择人数并发起匹配
+      uni.redirectTo({ url: '/pages/dice/select' });
     },
 
     // 返回上一页
