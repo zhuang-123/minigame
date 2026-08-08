@@ -245,6 +245,25 @@ export default {
     uni.$on('websocketMessage', this.handleWebSocketMessage);
     // 监听WebSocket关闭事件，清除倒计时
     uni.$on('websocketClose', this.clearCountdown);
+
+    // 回放页面切换期间缓存的消息（避免页面切换时丢失游戏状态消息）
+    try {
+      if (websocketService && typeof websocketService.drainMessageBuffer === 'function') {
+        const buffered = websocketService.drainMessageBuffer();
+        if (Array.isArray(buffered) && buffered.length > 0) {
+          console.log('回放WebSocket缓存消息条数:', buffered.length);
+          buffered.forEach((m) => {
+            try {
+              this.handleWebSocketMessage(m);
+            } catch (e) {
+              console.error('回放消息失败:', e);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('回放WebSocket缓存失败:', e);
+    }
   },
   onUnload() {
     // 断开WebSocket连接

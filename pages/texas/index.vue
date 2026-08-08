@@ -436,6 +436,25 @@ export default {
     uni.setStorageSync('user_name', this.myName);
     uni.$on('websocketMessage', this.handleWebSocketMessage);
     uni.$on('websocketClose', this.handleWebSocketClose);
+
+    // 回放页面切换期间缓存的消息（避免页面切换时丢失游戏状态消息）
+    try {
+      if (websocketService && typeof websocketService.drainMessageBuffer === 'function') {
+        const buffered = websocketService.drainMessageBuffer();
+        if (Array.isArray(buffered) && buffered.length > 0) {
+          console.log('回放WebSocket缓存消息条数:', buffered.length);
+          buffered.forEach((m) => {
+            try {
+              this.handleWebSocketMessage(m);
+            } catch (e) {
+              console.error('回放消息失败:', e);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('回放WebSocket缓存失败:', e);
+    }
   },
 
   onUnload() {
