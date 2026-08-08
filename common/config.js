@@ -7,7 +7,7 @@ export const gameConfig = {
 
   // 骰蛊游戏配置
   dice: {
-    defaultTimeout: 0
+    defaultTimeout: 60
   },
 
   // 谎言扑克游戏配置

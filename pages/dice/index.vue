@@ -58,51 +58,43 @@
             <text class="call-dice-title">叫骰</text>
           </view>
 
-          <!-- 数量选择 - 线性滑块 -->
-          <view class="call-dice-row slider-row">
-            <text class="call-dice-label">数量：</text>
-            <view class="slider-container">
-              <view class="slider-track-wrap">
-                <slider
-                  class="custom-slider"
-                  :min="2"
-                  :max="maxQuantity"
-                  :value="selectedNumber"
-                  @change="onQuantitySliderChange"
-                  @changing="onQuantitySliderChanging"
-                  activeColor="#4FD1C5"
-                  backgroundColor="#1E293B"
-                  block-size="24"
-                />
-                <text
-                  class="slider-value-label quantity-value-label"
-                  :style="{ left: quantityPercent + '%' }"
-                >{{ selectedNumber }}</text>
-              </view>
+          <!-- 数量选择 - 圆润胶囊滑块 -->
+          <view class="call-dice-row capsule-slider-row">
+            <text class="capsule-label">数量</text>
+            <view class="capsule-slider-container">
+              <slider
+                class="capsule-slider"
+                :min="2"
+                :max="maxQuantity"
+                :value="selectedNumber"
+                @change="onQuantitySliderChange"
+                @changing="onQuantitySliderChanging"
+                activeColor="#4FD1C5"
+                backgroundColor="#E2E8F0"
+                block-size="28"
+                block-color="#3B82F6"
+              />
+              <view class="capsule-value-badge">{{ selectedNumber }}</view>
             </view>
           </view>
 
-          <!-- 点数选择 - 线性滑块 -->
-          <view class="call-dice-row slider-row">
-            <text class="call-dice-label">点数：</text>
-            <view class="slider-container">
-              <view class="slider-track-wrap">
-                <slider
-                  class="custom-slider"
-                  :min="1"
-                  :max="6"
-                  :value="selectedPoint"
-                  @change="onPointSliderChange"
-                  @changing="onPointSliderChanging"
-                  activeColor="#F97316"
-                  backgroundColor="#1E293B"
-                  block-size="24"
-                />
-                <text
-                  class="slider-value-label point-value-label"
-                  :style="{ left: pointPercent + '%' }"
-                >{{ selectedPoint }}</text>
-              </view>
+          <!-- 点数选择 - 圆润胶囊滑块 -->
+          <view class="call-dice-row capsule-slider-row">
+            <text class="capsule-label">点数</text>
+            <view class="capsule-slider-container">
+              <slider
+                class="capsule-slider"
+                :min="1"
+                :max="6"
+                :value="selectedPoint"
+                @change="onPointSliderChange"
+                @changing="onPointSliderChanging"
+                activeColor="#F97316"
+                backgroundColor="#E2E8F0"
+                block-size="28"
+                block-color="#3B82F6"
+              />
+              <view class="capsule-value-badge point-badge">{{ selectedPoint }}</view>
             </view>
           </view>
 
@@ -1447,50 +1439,55 @@ export default {
   background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
 }
 
-/* 滑块相关样式 */
-.slider-row {
-  flex-direction: column;
-  align-items: stretch;
-  padding: 30rpx 0;
-}
-
-.slider-container {
-  position: relative;
-  width: 100%;
+/* 圆润胶囊滑块样式 */
+.capsule-slider-row {
+  display: flex;
+  align-items: center;
   padding: 20rpx 0;
+  gap: 24rpx;
 }
 
-.custom-slider {
-  width: 100%;
-  margin: 20rpx 0;
+.capsule-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1E293B;
+  min-width: 80rpx;
+  flex-shrink: 0;
 }
 
-/* 滑块轨道容器：为浮动数字标签提供定位基准 */
-.slider-track-wrap {
+.capsule-slider-container {
   position: relative;
-  width: 100%;
-  padding-top: 50rpx;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
 }
 
-/* 浮动数字标签：位于滑块滑块头右上方，发光效果 */
-.slider-value-label {
-  position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  font-size: 32rpx;
+.capsule-slider {
+  flex: 1;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.capsule-value-badge {
+  min-width: 56rpx;
+  height: 56rpx;
+  background: linear-gradient(135deg, #4FD1C5 0%, #38BDF8 100%);
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
   font-weight: 700;
-  white-space: nowrap;
-  pointer-events: none;
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 12rpx rgba(79, 209, 197, 0.3);
+  flex-shrink: 0;
+  padding: 0 12rpx;
 }
 
-.quantity-value-label {
-  color: #4FD1C5;
-  text-shadow: 0 0 12rpx rgba(79, 209, 197, 0.8), 0 0 4rpx rgba(79, 209, 197, 0.6);
-}
-
-.point-value-label {
-  color: #F97316;
-  text-shadow: 0 0 12rpx rgba(249, 115, 22, 0.8), 0 0 4rpx rgba(249, 115, 22, 0.6);
+.capsule-value-badge.point-badge {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  box-shadow: 0 4rpx 12rpx rgba(249, 115, 22, 0.3);
 }
 
 /* 游戏历史记录 */
