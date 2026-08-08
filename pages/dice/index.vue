@@ -25,7 +25,7 @@
           <view class="player-status">{{player.status}}</view>
           <!-- 倒计时显示，只在当前玩家显示且匹配成功后 -->
           <view v-if="player.isCurrent && !gameEnded && !isMatching" class="player-countdown">
-            <text class="countdown-text">剩余时间: {{countdown}}秒</text>
+            <text class="countdown-text">{{ countdownConfig.isUnlimited ? '思考时间: ' + countdown + '秒' : '剩余时间: ' + countdown + '秒' }}</text>
           </view>
         </view>
         <view class="player-dice" v-if="player.showDice">
@@ -58,35 +58,51 @@
             <text class="call-dice-title">叫骰</text>
           </view>
 
-          <!-- 数量选择 -->
-          <view class="call-dice-row">
+          <!-- 数量选择 - 线性滑块 -->
+          <view class="call-dice-row slider-row">
             <text class="call-dice-label">数量：</text>
-            <view class="number-buttons">
-              <button
-                  v-for="num in diceNumbers"
-                  :key="num"
-                  class="number-btn"
-                  :class="{ 'active': selectedNumber === num }"
-                  @tap="selectNumber(num)"
-              >
-                {{num}}
-              </button>
+            <view class="slider-container">
+              <view class="slider-track-wrap">
+                <slider
+                  class="custom-slider"
+                  :min="2"
+                  :max="maxQuantity"
+                  :value="selectedNumber"
+                  @change="onQuantitySliderChange"
+                  @changing="onQuantitySliderChanging"
+                  activeColor="#4FD1C5"
+                  backgroundColor="#1E293B"
+                  block-size="24"
+                />
+                <text
+                  class="slider-value-label quantity-value-label"
+                  :style="{ left: quantityPercent + '%' }"
+                >{{ selectedNumber }}</text>
+              </view>
             </view>
           </view>
 
-          <!-- 点数选择 -->
-          <view class="call-dice-row">
+          <!-- 点数选择 - 线性滑块 -->
+          <view class="call-dice-row slider-row">
             <text class="call-dice-label">点数：</text>
-            <view class="point-buttons">
-              <button
-                  v-for="point in dicePoints"
-                  :key="point"
-                  class="point-btn"
-                  :class="{ 'active': selectedPoint === point }"
-                  @tap="selectPoint(point)"
-              >
-                {{point}}
-              </button>
+            <view class="slider-container">
+              <view class="slider-track-wrap">
+                <slider
+                  class="custom-slider"
+                  :min="1"
+                  :max="6"
+                  :value="selectedPoint"
+                  @change="onPointSliderChange"
+                  @changing="onPointSliderChanging"
+                  activeColor="#F97316"
+                  backgroundColor="#1E293B"
+                  block-size="24"
+                />
+                <text
+                  class="slider-value-label point-value-label"
+                  :style="{ left: pointPercent + '%' }"
+                >{{ selectedPoint }}</text>
+              </view>
             </view>
           </view>
 
@@ -142,6 +158,7 @@
 
 <script>
 import websocketService from '../../common/websocket';
+import { gameConfig } from '../../common/config';
 
 export default {
   data() {
@@ -172,11 +189,9 @@ export default {
 
       // 叫骰相关
       showCallDice: false,
-      selectedNumber: 3,
+      selectedNumber: 5,
       selectedPoint: 1,
       selectedZhai: false,
-      diceNumbers: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-      dicePoints: [1, 2, 3, 4, 5, 6],
 
       // 游戏控制
       canShake: false, // 匹配成功后自动摇骰，不需要手动摇
@@ -189,8 +204,15 @@ export default {
       isPeeTarget: false, // 是否被劈中，需要回复
       
       // 倒计时相关
-      countdown: 60, // 倒计时时间（秒）
+      countdown: gameConfig.dice.defaultTimeout, // 倒计时时间（秒）
       countdownTimer: null, // 倒计时计时器
+      countdownConfig: {
+        remainingTime: 0,      // 剩余时间（秒）
+        elapsedTime: 0,        // 已用思考时间（秒），仅在无超时限制时使用
+        isRunning: false,      // 是否正在倒计时/计时
+        isUnlimited: false,    // 是否无超时限制（timeout为0时，永不超时，正计时显示思考时间）
+        timeout: gameConfig.dice.defaultTimeout  // 超时时间（秒），0表示无限制
+      },
       lastCall: { // 上一个叫骰信息
         quantity: 0,
         point: 0,
@@ -240,10 +262,29 @@ export default {
     uni.$off('websocketMessage', this.handleWebSocketMessage);
     uni.$off('websocketClose', this.clearCountdown);
   },
+  computed: {
+    // 数量滑块最大值：人数 * 5
+    maxQuantity() {
+      return Math.max(this.players.length * 5, 2);
+    },
+
+    // 数量滑块当前值对应的百分比位置（用于定位数字标签）
+    quantityPercent() {
+      const min = 2;
+      const max = this.maxQuantity;
+      if (max <= min) return 0;
+      return ((this.selectedNumber - min) / (max - min)) * 100;
+    },
+
+    // 点数滑块当前值对应的百分比位置（用于定位数字标签）
+    pointPercent() {
+      return ((this.selectedPoint - 1) / 5) * 100;
+    }
+  },
   methods: {
     // 连接WebSocket服务器
     connectWebSocket() {
-      websocketService.connect(this.userId, 'ws://localhost:8888/ws').then(() => {
+      websocketService.connect(this.userId, 'ws://120.55.84.53:8888/ws').then(() => {
         this.isConnected = true;
         this.gameStatus = '正在匹配玩家...';
         this.gameHistory.unshift('已连接到服务器，正在匹配玩家...');
@@ -357,7 +398,9 @@ export default {
         }
 
         // 强制开始新的倒计时
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[your_turn] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
       } else if (message.type === 'wait_other') {
         // 等待其他玩家
         console.log('收到wait_other消息，等待其他玩家');
@@ -375,7 +418,9 @@ export default {
           });
         }
         // 强制开始新的倒计时，确保所有玩家看到相同的倒计时
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[wait_other] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
       } else if (message.type === 'can_pee') {
         // 可以劈
         this.canCall = false;
@@ -392,7 +437,9 @@ export default {
           });
         }
         // 强制开始新的倒计时，确保所有玩家看到相同的倒计时
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[wait_other] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
       } else if (message.type === 'pee_wait') {
         // 我发起了劈，等待对方回复
         this.canCall = false;
@@ -409,7 +456,9 @@ export default {
           });
         }
         // 开始倒计时，显示被劈玩家的倒计时
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[pee_wait] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
         console.log('发起劈，开始显示被劈玩家的倒计时');
       } else if (message.type === 'pee_target') {
         // 我被劈了，需要回复
@@ -428,7 +477,9 @@ export default {
           });
         }
         // 开始倒计时，被劈时需要在规定时间内回复
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[pee_target] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
         console.log('被劈了，开始倒计时');
       } else if (message.type === 'pee_other') {
         // 其他玩家正在劈，我不能劈
@@ -460,7 +511,9 @@ export default {
         this.canPee = false;
         this.canCounterPee = false;
         // 开始倒计时，因为可以叫骰
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[can_counter_pee] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
       } else if (message.type === 'no_counter_pee') {
         // 当前没有可以反劈的劈命令
         this.canCall = false;
@@ -526,13 +579,17 @@ export default {
           });
         }
         // 强制开始新的倒计时，确保所有玩家看到相同的倒计时
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[wait_other] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
       } else if (message.type === 'call_error') {
         // 叫数错误，保持按钮状态不变
         // 只显示错误消息，不修改按钮状态
         this.canCall = true;
         // 重新开始倒计时
-        this.startCountdown();
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.dice.defaultTimeout;
+        console.log('[call_error] message.content:', message.content, 'timeout值:', timeout);
+        this.startCountdown(timeout);
       }
     },
 
@@ -562,23 +619,47 @@ export default {
       });
     },
 
-    // 开始倒计时
-    startCountdown() {
+    // 开始倒计时（timeout为0表示无超时限制，永不超时，改为显示已用思考时间）
+    startCountdown(timeout) {
       // 匹配中不开始倒计时
       if (this.isMatching) return;
-      
+
       // 游戏已结束不开始倒计时
       if (this.gameEnded) return;
-      
-      console.log('开始倒计时，重置为60秒');
-      
-      // 强制清除之前的倒计时，确保完全重置
+
+      console.log('[骰蛊倒计时调试] 收到timeout值:', timeout, '类型:', typeof timeout);
+
+      // 先清除之前的倒计时
       this.clearCountdown();
-      
-      // 强制重置倒计时时间为60秒
-      this.countdown = 60;
-      console.log('倒计时已重置为:', this.countdown);
-      
+
+      // 如果没有传入timeout，使用默认值
+      const finalTimeout = timeout !== undefined && timeout !== null ? timeout : gameConfig.dice.defaultTimeout;
+
+      this.countdownConfig.timeout = finalTimeout;
+      this.countdownConfig.isRunning = true;
+
+      if (finalTimeout === 0) {
+        // 无超时限制：正计时显示思考时间，不会自动操作
+        console.log('[骰蛊倒计时] 进入无限思考时间模式');
+        this.countdownConfig.isUnlimited = true;
+        this.countdownConfig.remainingTime = 0;
+        this.countdownConfig.elapsedTime = 0;
+        this.countdown = 0;
+
+        this.countdownTimer = setInterval(() => {
+          this.countdownConfig.elapsedTime++;
+          this.countdown = this.countdownConfig.elapsedTime; // 更新显示的倒计时值
+          console.log('思考时间:', this.countdown);
+        }, 1000);
+        return;
+      }
+
+      // 正常倒计时模式
+      console.log('[骰蛊倒计时] 进入正常倒计时模式，时间:', finalTimeout, '秒');
+      this.countdownConfig.isUnlimited = false;
+      this.countdownConfig.remainingTime = finalTimeout;
+      this.countdown = finalTimeout;
+
       // 开始新的倒计时
       this.countdownTimer = setInterval(() => {
         // 检查游戏是否已结束，如果已结束则清除倒计时
@@ -587,17 +668,18 @@ export default {
           this.clearCountdown();
           return;
         }
-        
+
         this.countdown--;
+        this.countdownConfig.remainingTime = this.countdown;
         console.log('当前倒计时:', this.countdown);
-        
+
         if (this.countdown <= 0) {
           // 检查游戏是否已结束
           if (this.gameEnded) {
             this.clearCountdown();
             return;
           }
-          
+
           // 检查是否是被劈状态
           if (this.isPeeTarget) {
             console.log('被劈超时，自动开骰');
@@ -610,27 +692,27 @@ export default {
               setTimeout(() => {
                 // 再次检查游戏是否已结束
                 if (this.gameEnded) return;
-                
+
                 // 再次检查当前玩家状态
                 const updatedCurrentPlayer = this.players.find(p => p.isCurrent);
                 // 只有当当前玩家仍然是同一个其他玩家时，才判断为断开
-                if (updatedCurrentPlayer && updatedCurrentPlayer.userId !== this.userId && 
+                if (updatedCurrentPlayer && updatedCurrentPlayer.userId !== this.userId &&
                     updatedCurrentPlayer.userId === currentPlayer.userId) {
                   // 确认其他玩家确实没有叫骰，显示已断开
                   updatedCurrentPlayer.status = '已断开';
                   this.gameHistory.unshift(`玩家${updatedCurrentPlayer.name}已断开`);
                   this.gameStatus = `玩家${updatedCurrentPlayer.name}已断开`;
-                  
+
                   // 先设置游戏结束状态
                   this.gameEnded = true;
                   this.canCall = false;
                   this.canOpen = false;
                   this.canPee = false;
                   this.canCounterPee = false;
-                  
+
                   // 立即清除倒计时，确保倒计时停止
                   this.clearCountdown();
-                  
+
                   // 最后断开WebSocket连接
                   websocketService.disconnect();
                 }
@@ -653,7 +735,11 @@ export default {
         console.log('清除倒计时');
         clearInterval(this.countdownTimer);
         this.countdownTimer = null;
-        this.countdown = 60;
+        this.countdown = 0;
+        this.countdownConfig.isRunning = false;
+        this.countdownConfig.isUnlimited = false;
+        this.countdownConfig.remainingTime = 0;
+        this.countdownConfig.elapsedTime = 0;
         console.log('倒计时已清除，重置为:', this.countdown);
       }
     },
@@ -805,6 +891,26 @@ export default {
       });
     },
 
+    // 数量滑块滑动中（实时更新，线性滑块，滑块值即真实数量）
+    onQuantitySliderChanging(e) {
+      this.selectedNumber = e.detail.value;
+    },
+
+    // 数量滑块滑动结束
+    onQuantitySliderChange(e) {
+      this.selectedNumber = e.detail.value;
+    },
+
+    // 点数滑块滑动中（实时更新，线性滑块，滑块值即真实点数）
+    onPointSliderChanging(e) {
+      this.selectedPoint = e.detail.value;
+    },
+
+    // 点数滑块滑动结束
+    onPointSliderChange(e) {
+      this.selectedPoint = e.detail.value;
+    },
+
     // 进入规则页面
     goToRule() {
       uni.navigateTo({
@@ -820,12 +926,12 @@ export default {
       this.showCallDice = true;
     },
 
-    // 选择数量
+    // 选择数量（保留用于兼容）
     selectNumber(num) {
       this.selectedNumber = num;
     },
 
-    // 选择点数
+    // 选择点数（保留用于兼容）
     selectPoint(point) {
       this.selectedPoint = point;
     },
@@ -1339,6 +1445,52 @@ export default {
 
 .confirm-btn {
   background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+}
+
+/* 滑块相关样式 */
+.slider-row {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 30rpx 0;
+}
+
+.slider-container {
+  position: relative;
+  width: 100%;
+  padding: 20rpx 0;
+}
+
+.custom-slider {
+  width: 100%;
+  margin: 20rpx 0;
+}
+
+/* 滑块轨道容器：为浮动数字标签提供定位基准 */
+.slider-track-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 50rpx;
+}
+
+/* 浮动数字标签：位于滑块滑块头右上方，发光效果 */
+.slider-value-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 32rpx;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.quantity-value-label {
+  color: #4FD1C5;
+  text-shadow: 0 0 12rpx rgba(79, 209, 197, 0.8), 0 0 4rpx rgba(79, 209, 197, 0.6);
+}
+
+.point-value-label {
+  color: #F97316;
+  text-shadow: 0 0 12rpx rgba(249, 115, 22, 0.8), 0 0 4rpx rgba(249, 115, 22, 0.6);
 }
 
 /* 游戏历史记录 */

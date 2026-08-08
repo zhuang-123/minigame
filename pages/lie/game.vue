@@ -49,13 +49,13 @@
             {{ callDisplay.opponents[opponent.name].text }}
           </view>
           <!-- 其他玩家的倒计时显示（轮到其他玩家时显示在头像旁边） -->
-          <view 
-            v-if="countdown.isRunning && opponent.name === currentTurnPlayerName && !isSelfTurn" 
+          <view
+            v-if="countdown.isRunning && opponent.name === currentTurnPlayerName && !isSelfTurn"
             class="opponent-countdown"
-            :class="{ 'countdown-warning': countdown.remainingTime <= 5 }"
+            :class="{ 'countdown-warning': !countdown.isUnlimited && countdown.remainingTime <= 5 }"
           >
             <text class="countdown-icon">⏱️</text>
-            <text class="countdown-number">{{ countdown.remainingTime }}s</text>
+            <text class="countdown-number">{{ countdown.isUnlimited ? countdown.elapsedTime : countdown.remainingTime }}s</text>
           </view>
         </view>
         <view class="player-name">{{ opponent.name }}</view>
@@ -141,13 +141,13 @@
         </view>
         
         <!-- 自己的倒计时显示（轮到自己时显示在手牌上方） -->
-        <view 
-          v-if="countdown.isRunning && currentTurnPlayerName === myName" 
+        <view
+          v-if="countdown.isRunning && currentTurnPlayerName === myName"
           class="self-countdown"
-          :class="{ 'countdown-warning': countdown.remainingTime <= 5 }"
+          :class="{ 'countdown-warning': !countdown.isUnlimited && countdown.remainingTime <= 5 }"
         >
           <text class="countdown-icon">⏱️</text>
-          <text class="countdown-number">{{ countdown.remainingTime }}s</text>
+          <text class="countdown-number">{{ countdown.isUnlimited ? countdown.elapsedTime : countdown.remainingTime }}s</text>
         </view>
         
         <view class="my-cards">
@@ -328,6 +328,7 @@
 
 <script>
 import websocketService from '../../common/websocket';
+import { gameConfig } from '../../common/config';
 
 export default {
   data() {
@@ -482,8 +483,10 @@ export default {
       // 倒计时相关
       countdown: {
         remainingTime: 0,      // 剩余时间（秒）
-        isRunning: false,      // 是否正在倒计时
-        timeout: 20,           // 超时时间（秒）
+        elapsedTime: 0,        // 已用思考时间（秒），仅在无超时限制时使用
+        isRunning: false,      // 是否正在倒计时/计时
+        isUnlimited: false,    // 是否无超时限制（timeout为0时，永不超时，正计时显示思考时间）
+        timeout: gameConfig.lie.defaultTimeout,           // 超时时间（秒），0表示无限制
         mustPlay: false        // 是否是必须出牌的状态（your_turn）
       },
       // 当前回合玩家ID（用于匹配头像）
@@ -708,16 +711,32 @@ export default {
   },
   
   methods: {
-    // 启动倒计时
-    startCountdown(timeout = 20, mustPlay = false) {
+    // 启动倒计时（timeout为0表示无超时限制，永不超时，改为显示已用思考时间）
+    startCountdown(timeout = gameConfig.lie.defaultTimeout, mustPlay = false) {
       // 先停止之前的倒计时
       this.stopCountdown();
-      
+
+      console.log('[倒计时调试] 收到timeout值:', timeout, '类型:', typeof timeout);
+
       this.countdown.timeout = timeout;
-      this.countdown.remainingTime = timeout;
-      this.countdown.isRunning = true;
       this.countdown.mustPlay = mustPlay;
-      
+      this.countdown.isRunning = true;
+
+      if (timeout === 0 || !timeout) {
+        // 无超时限制：正计时显示思考时间，不会自动出牌
+        this.countdown.isUnlimited = true;
+        this.countdown.remainingTime = 0;
+        this.countdown.elapsedTime = 0;
+
+        this.countdownTimer = setInterval(() => {
+          this.countdown.elapsedTime++;
+        }, 1000);
+        return;
+      }
+
+      this.countdown.isUnlimited = false;
+      this.countdown.remainingTime = timeout;
+
       this.countdownTimer = setInterval(() => {
         this.countdown.remainingTime--;
         if (this.countdown.remainingTime <= 0) {
@@ -731,7 +750,7 @@ export default {
         }
       }, 1000);
     },
-    
+
     // 停止倒计时
     stopCountdown() {
       if (this.countdownTimer) {
@@ -739,7 +758,9 @@ export default {
         this.countdownTimer = null;
       }
       this.countdown.isRunning = false;
+      this.countdown.isUnlimited = false;
       this.countdown.remainingTime = 0;
+      this.countdown.elapsedTime = 0;
       this.countdown.mustPlay = false;
     },
     
@@ -1540,7 +1561,8 @@ export default {
         addActionMessage('轮到你出牌了！');
         
         // 启动倒计时（必须出牌状态）
-        const timeout = message.content && message.content.timeout ? message.content.timeout : 20;
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.lie.defaultTimeout;
+        console.log('[your_turn] message.content:', message.content, 'timeout值:', timeout);
         this.startCountdown(timeout, true);
       } else if (message.type === 'player_turn') {
         // 轮到其他玩家出牌
@@ -1554,7 +1576,8 @@ export default {
         addActionMessage(`轮到 ${message.content.currentPlayer} 出牌`);
         
         // 启动倒计时（非必须出牌状态）
-        const timeout = message.content && message.content.timeout ? message.content.timeout : 20;
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.lie.defaultTimeout;
+        console.log('[player_turn] message.content:', message.content, 'timeout值:', timeout);
         this.startCountdown(timeout, false);
       } else if (message.type === 'player_played') {
         // 处理玩家出牌
@@ -1648,7 +1671,7 @@ export default {
         addActionMessage('轮到你做出选择（质疑/过牌）');
         
         // 启动倒计时
-        const timeout = message.content && message.content.timeout ? message.content.timeout : 20;
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.lie.defaultTimeout;
         this.startCountdown(timeout);
       } else if (message.type === 'player_choice') {
         // 轮到其他玩家做出选择
@@ -1665,7 +1688,7 @@ export default {
         addActionMessage(`轮到 ${message.content.currentPlayer} 做出选择`);
         
         // 启动倒计时
-        const timeout = message.content && message.content.timeout ? message.content.timeout : 20;
+        const timeout = message.content && message.content.timeout !== undefined && message.content.timeout !== null ? message.content.timeout : gameConfig.lie.defaultTimeout;
         this.startCountdown(timeout);
       } else if (message.type === 'player_passed') {
         // 玩家选择了过牌
