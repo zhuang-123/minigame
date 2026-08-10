@@ -297,8 +297,13 @@ export default {
     connectWebSocket() {
       websocketService.connect(this.userId, 'ws://127.0.0.1:8888/ws').then(() => {
         this.isConnected = true;
-        this.gameStatus = '正在匹配玩家...';
-        this.gameHistory.unshift('已连接到服务器，正在匹配玩家...');
+        // 仅在仍处于匹配阶段时才显示“正在匹配”文案；
+        // 若对局消息（match_success / reconnect_success 等）已先行到达并处理，
+        // 不能再把状态覆盖回“正在匹配玩家...”，否则会卡在匹配提示（见 bug：已开局仍显示正在匹配）。
+        if (this.isMatching) {
+          this.gameStatus = '正在匹配玩家...';
+          this.gameHistory.unshift('已连接到服务器，正在匹配玩家...');
+        }
       }).catch(error => {
         console.error('WebSocket连接失败:', error);
         this.gameStatus = '连接服务器失败，请重试';
@@ -360,6 +365,14 @@ export default {
         this.canCounterPee = false; // 第1回合不能反劈
         this.isMatching = false; // 匹配成功，设置为false
 
+        // 重置上一局可能残留的结束态，确保新对局从干净状态开始
+        // （否则缓冲区里上一局的 game_end 消息被回放后 gameEnded 仍为 true，
+        //  导致新对局一开局就只显示“再来一局”按钮，见 bug：3人局轮到自己只显示再来一局）
+        this.gameEnded = false;
+        this.isPeeTarget = false;
+        this.hasCalled = false;
+        this.showCallDice = false;
+
         // 直接使用后端返回的点数数组
         if (message.points && Array.isArray(message.points)) {
           this.myDice = message.points;
@@ -384,6 +397,59 @@ export default {
 
         // 开始倒计时
         this.startCountdown();
+      } else if (message.type === 'reconnect_success') {
+        // 断线重连，恢复对局快照（点数、玩家列表、当前回合、最近叫数）
+        this.isMatching = false;
+        this.gameEnded = false;
+        this.isPeeTarget = false;
+        this.showCallDice = false;
+        this.showMyDice = true;
+
+        // 恢复自己的骰子点数
+        if (message.points && Array.isArray(message.points)) {
+          this.myDice = message.points;
+        }
+
+        // 恢复玩家列表
+        if (message.players && Array.isArray(message.players)) {
+          this.players = message.players.map((sp, index) => {
+            const isMe = sp.user_id === this.userId;
+            const last6 = sp.user_id ? sp.user_id.substring(sp.user_id.length - 6) : '';
+            return {
+              id: index + 1,
+              name: isMe ? '我' : ('玩家' + last6),
+              avatar: isMe ? '../../static/me.png' : '../../static/logo.png',
+              status: '√已准备',
+              dice: [],
+              showDice: false,
+              isCurrent: sp.is_current || false,
+              isWinner: false,
+              isLoser: false,
+              userId: sp.user_id
+            };
+          });
+        }
+
+        // quantity/point 存在说明本局已有叫数记录（lastCall 已在函数开头更新）
+        const rcHasCall = !!((message.quantity || message.Quantity) && (message.point || message.Point));
+        const rcMe = this.players.find(p => p.userId === this.userId);
+        const rcMyTurn = !!(rcMe && rcMe.isCurrent);
+        if (rcMyTurn) {
+          // 轮到自己：可叫骰；若已有叫数还可开/劈
+          this.canCall = true;
+          this.canOpen = rcHasCall;
+          this.canPee = rcHasCall;
+          this.canCounterPee = false;
+        } else {
+          // 未轮到自己：等待，禁用所有操作
+          this.canCall = false;
+          this.canOpen = false;
+          this.canPee = false;
+          this.canCounterPee = false;
+        }
+
+        // 恢复倒计时
+        this.startCountdown(gameConfig.dice.defaultTimeout);
       } else if (message.type === 'call_wait') {
         // 第一回合等待其他玩家叫骰时自己的按钮状态全部不可用
         this.canCall = false;
@@ -870,6 +936,22 @@ export default {
 
     // 返回上一页
     goBack() {
+      // 游戏进行中（已匹配成功且未结束）时，退出需二次确认
+      const gameInProgress = !this.isMatching && !this.gameEnded;
+      if (gameInProgress) {
+        uni.showModal({
+          title: '提示',
+          content: '游戏正在进行中，确定要退出吗？',
+          confirmText: '退出',
+          cancelText: '继续游戏',
+          success: (res) => {
+            if (res.confirm) {
+              uni.navigateBack({ delta: 1 });
+            }
+          }
+        });
+        return;
+      }
       uni.navigateBack({
         delta: 1
       });

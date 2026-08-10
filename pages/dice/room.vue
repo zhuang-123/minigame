@@ -244,6 +244,13 @@ export default {
         try { uni.$off('websocketMessage', this.handleWebSocketMessage); } catch (_) {}
         try { uni.$off('websocketClose', this.handleWebSocketClose); } catch (_) {}
         uni.redirectTo({ url: '/pages/dice/index' });
+      } else if (message.type === 'reconnect_success') {
+        // 断线宽限期内重连：进入游戏页恢复对局
+        this.isWaiting = false;
+        this.clearMatchTimer();
+        try { uni.$off('websocketMessage', this.handleWebSocketMessage); } catch (_) {}
+        try { uni.$off('websocketClose', this.handleWebSocketClose); } catch (_) {}
+        uni.redirectTo({ url: '/pages/dice/index' });
       }
     },
 
@@ -384,6 +391,7 @@ export default {
 
 .primary-btn:disabled {
   background: linear-gradient(135deg, #9CA3AF 0%, #D1D5DB 100%);
+  color: #ffffff;
   box-shadow: none;
 }
 

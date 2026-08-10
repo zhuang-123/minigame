@@ -17,13 +17,18 @@
       <view class="mode-cards">
         <view
           class="mode-card"
-          v-for="n in modeOptions"
-          :key="n"
-          :class="{ active: selectedMode === n }"
-          @tap="selectMode(n)"
+          v-for="item in modeOptions"
+          :key="item.num"
+          :class="{ active: selectedMode === item.num }"
+          @tap="selectMode(item.num)"
         >
-          <view class="mode-icon">{{ '🎲'.repeat(n) }}</view>
-          <view class="mode-num">{{ n }}人局</view>
+          <view class="mode-icon">{{ item.icon }}</view>
+          <view class="mode-num">{{ item.num }}人局</view>
+        </view>
+        <!-- 开房间：样式同人数卡片，宽度占一整行 -->
+        <view class="mode-card room-card" @tap="goToRoom">
+          <view class="mode-icon">🚪</view>
+          <view class="mode-num">开房间</view>
         </view>
       </view>
     </view>
@@ -31,7 +36,6 @@
     <!-- 底部按钮 -->
     <view class="bottom-section">
       <button class="start-btn" :disabled="!selectedMode" @tap="startMatch">开始匹配</button>
-      <view class="room-link" @tap="goToRoom">没有合适的人数？去开房间</view>
     </view>
 
     <!-- 匹配等待遮罩 -->
@@ -61,7 +65,12 @@ import { formatDuration } from '../../common/format';
 export default {
   data() {
     return {
-      modeOptions: [2, 3, 4, 5],
+      modeOptions: [
+        { num: 2, icon: '🎲🎲' },
+        { num: 3, icon: '🎲🎲🎲' },
+        { num: 4, icon: '🎲🎲🎲🎲' },
+        { num: 5, icon: '🎲🎲🎲🎲🎲' }
+      ],
       selectedMode: null,
       isMatching: false,
       matchStartTime: null,
@@ -183,6 +192,13 @@ export default {
         try { uni.$off('websocketMessage', this.handleWebSocketMessage); } catch (_) {}
         try { uni.$off('websocketClose', this.handleWebSocketClose); } catch (_) {}
         uni.redirectTo({ url: '/pages/dice/index' });
+      } else if (message.type === 'reconnect_success') {
+        // 断线宽限期内重连：进入游戏页恢复对局（快照消息会被缓冲并在游戏页回放）
+        this.isMatching = false;
+        this.clearMatchTimer();
+        try { uni.$off('websocketMessage', this.handleWebSocketMessage); } catch (_) {}
+        try { uni.$off('websocketClose', this.handleWebSocketClose); } catch (_) {}
+        uni.redirectTo({ url: '/pages/dice/index' });
       }
     },
 
@@ -260,6 +276,12 @@ export default {
   flex-wrap: wrap;
   gap: 30rpx;
   justify-content: center;
+  width: 550rpx;
+}
+
+/* 开房间卡片：与人数卡片同风格，宽度占一整行 */
+.room-card {
+  width: 100%;
 }
 
 .mode-card {
@@ -319,12 +341,6 @@ export default {
 .start-btn:disabled {
   background: linear-gradient(135deg, #9CA3AF 0%, #D1D5DB 100%);
   box-shadow: none;
-}
-
-.room-link {
-  font-size: 24rpx;
-  color: #0B63F6;
-  text-decoration: underline;
 }
 
 /* 匹配等待遮罩 */

@@ -250,6 +250,9 @@ class WebSocketService {
         // 重置重连计数器与进行中的连接 Promise
         this.reconnectAttempts = 0;
         this.connectPromise = null;
+        // 清空消息缓冲，避免上一局的残留消息（如 game_end）被下一局页面回放，
+        // 造成新对局一开局就被判为已结束。
+        this.messageBuffer.length = 0;
         // 关闭并解绑当前 socket（解绑后其 onClose 不会再触发重连）
         this.teardownSocket();
     }
