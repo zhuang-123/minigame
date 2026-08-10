@@ -156,7 +156,7 @@ export default {
       this.targetCount = this.createTarget;
       this.matchedCount = 1;
 
-      websocketService.connect(this.userId, 'ws://120.55.84.53:8888/ws').then(() => {
+      websocketService.connect(this.userId, 'ws://127.0.0.1:8888/ws').then(() => {
         const pwd = this.createPassword ? String(this.createPassword) : '';
         websocketService.sendMessage(`ROOM_CREATE:${this.createTarget}:${pwd}`);
         this.matchStartTime = new Date();
@@ -181,7 +181,7 @@ export default {
       this.matchedCount = 0;
       this.targetCount = 0;
 
-      websocketService.connect(this.userId, 'ws://120.55.84.53:8888/ws').then(() => {
+      websocketService.connect(this.userId, 'ws://127.0.0.1:8888/ws').then(() => {
         websocketService.sendMessage(`ROOM_JOIN:${this.joinRoomId}:${this.joinPassword}`);
         this.matchStartTime = new Date();
         this.matchDuration = 0;

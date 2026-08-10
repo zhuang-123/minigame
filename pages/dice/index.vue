@@ -295,7 +295,7 @@ export default {
   methods: {
     // 连接WebSocket服务器
     connectWebSocket() {
-      websocketService.connect(this.userId, 'ws://120.55.84.53:8888/ws').then(() => {
+      websocketService.connect(this.userId, 'ws://127.0.0.1:8888/ws').then(() => {
         this.isConnected = true;
         this.gameStatus = '正在匹配玩家...';
         this.gameHistory.unshift('已连接到服务器，正在匹配玩家...');

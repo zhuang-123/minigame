@@ -1,5 +1,5 @@
 // 域名与接口集中维护
-export const BASE_URL = 'https://wespark.kuqitt.cn'
+export const BASE_URL = 'http://localhost:8080'
 
 export const ENDPOINTS = {
 	// wxMinLogin: '/newapi/index.php?app=newLogin&act=wxMinLogin'

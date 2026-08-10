@@ -131,7 +131,7 @@ export default {
       this.isMatching = true;
       this.matchedCount = 0;
 
-      websocketService.connect(this.userId, 'ws://120.55.84.53:8888/ws').then(() => {
+      websocketService.connect(this.userId, 'ws://127.0.0.1:8888/ws').then(() => {
         websocketService.sendMessage(`MATCH:${this.selectedMode}`);
         this.matchStartTime = new Date();
         this.matchDuration = 0;
